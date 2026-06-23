@@ -497,17 +497,6 @@
               </select>
             </label>
             <label>
-              奥沙利铂浓度依据
-              <select id="oxConcMode">
-                <option value="label">静脉说明书浓度（0.7 mg/mL）</option>
-                <option value="hai" selected>文献稳定性浓度（1.3 mg/mL）</option>
-              </select>
-            </label>
-            <label>
-              奥沙利铂允许最高终浓度（mg/mL）
-              <input id="oxTargetConc" type="number" inputmode="decimal" min="0.1" max="1.3" step="0.1" value="1.3">
-            </label>
-            <label>
               亚叶酸钙剂量
               <select id="lvDose">
                 <option value="200" selected>200 mg/m²</option>
@@ -527,10 +516,6 @@
                 <option value="动脉滴注" selected>动脉滴注</option>
                 <option value="静脉滴注">静脉滴注</option>
               </select>
-            </label>
-            <label>
-              亚叶酸钙复溶浓度口径（mg/mL）
-              <input id="lvTargetConc" type="number" inputmode="decimal" min="0.1" max="20" step="0.1" value="10">
             </label>
             <label>
               5-FU 团注方式
@@ -554,10 +539,15 @@
                 <option value="46" selected>46 小时</option>
               </select>
             </label>
-            <label>
-              5-FU 输注液浓度上限（mg/mL）
-              <input id="fuTargetConc" type="number" inputmode="decimal" min="1.5" max="10" step="0.1" value="10">
-            </label>
+          </div>
+          <div hidden>
+            <select id="oxConcMode">
+              <option value="label">静脉说明书浓度（0.7 mg/mL）</option>
+              <option value="hai" selected>文献稳定性浓度（1.3 mg/mL）</option>
+            </select>
+            <input id="oxTargetConc" type="number" min="0.1" max="1.3" step="0.1" value="1.3">
+            <input id="lvTargetConc" type="number" min="0.1" max="20" step="0.1" value="10">
+            <input id="fuTargetConc" type="number" min="1.5" max="10" step="0.1" value="10">
           </div>
           <div class="button-row">
             <button class="btn-primary" id="calcButton" type="button">立即计算</button>
