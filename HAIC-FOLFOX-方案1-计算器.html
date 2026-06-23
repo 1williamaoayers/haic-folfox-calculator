@@ -1024,6 +1024,21 @@
       return Math.max(1, whole + 1);
     }
 
+    function roundOxaliplatinVials(doseMg, vialMg) {
+      if (vialMg === 50) {
+        if (doseMg <= 70) {
+          return 1;
+        }
+        if (doseMg <= 130) {
+          return 2;
+        }
+        if (doseMg <= 150) {
+          return 3;
+        }
+      }
+      return Math.max(1, Math.ceil((doseMg / vialMg) - 1e-9));
+    }
+
     function createPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl) {
       const theoreticalVials = doseMg / drug.vialMg;
       const dispenseVials = roundVialCount(theoreticalVials);
@@ -1069,7 +1084,7 @@
 
     function createOxaliplatinPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl) {
       const theoreticalVials = doseMg / drug.vialMg;
-      const dispenseVials = Math.max(1, Math.ceil(theoreticalVials - 1e-9));
+      const dispenseVials = roundOxaliplatinVials(doseMg, drug.vialMg);
       const remainderMg = round((dispenseVials * drug.vialMg) - doseMg, 1);
       const syringeCount = Math.max(1, Math.ceil(dispenseVials));
       const finalVolumeMl = syringeCount * syringeMaxMl;
