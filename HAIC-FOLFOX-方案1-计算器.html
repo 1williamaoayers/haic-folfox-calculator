@@ -1213,7 +1213,13 @@
       const perSyringeLabel = plan.durationPerSyringeHours >= 1
         ? `${format(plan.durationPerSyringeHours)} 小时`
         : `${format(plan.durationPerSyringeHours * 60, 0)} 分钟`;
-      return `${plan.productName}固定按 1 支 ${plan.vialMg}mg = 1 组：共 ${plan.syringeCount} 组。${plan.groupBreakdown.map((group, index) => `第${index + 1}组约 ${format(group.doseMg, 1)} mg，抽原药 ${format(group.rawVolumeMl)} mL，加 5%葡萄糖 ${format(group.diluentMl)} mL 补足至 ${format(plan.syringeMaxMl, 0)} mL，最终浓度约 ${format(group.finalConcentrationMgPerMl)} mg/mL`).join("；")}。每组约运行 ${perSyringeLabel}，统一泵速 ${format(plan.rateMlPerHour)} mL/h。`;
+      const groupDetails = plan.groupBreakdown.map((group, index) => {
+        if (plan.formType === "powder") {
+          return `第${index + 1}组约 ${format(group.doseMg, 1)} mg，复溶后药液约 ${format(group.rawVolumeMl)} mL，再加 5%葡萄糖 ${format(group.diluentMl)} mL，总量 ${format(plan.syringeMaxMl, 0)} mL，最终浓度约 ${format(group.finalConcentrationMgPerMl)} mg/mL`;
+        }
+        return `第${index + 1}组约 ${format(group.doseMg, 1)} mg，抽原药 ${format(group.rawVolumeMl)} mL，加 5%葡萄糖 ${format(group.diluentMl)} mL 补足至 ${format(plan.syringeMaxMl, 0)} mL，最终浓度约 ${format(group.finalConcentrationMgPerMl)} mg/mL`;
+      }).join("；");
+      return `${plan.productName}固定按 1 支 ${plan.vialMg}mg = 1 组：共 ${plan.syringeCount} 组。${groupDetails}。每组约运行 ${perSyringeLabel}，统一泵速 ${format(plan.rateMlPerHour)} mL/h。`;
     }
 
     function formatDurationShort(hours) {
@@ -1368,7 +1374,7 @@
       const diluentText = `${formatLoose(group.diluentMl)}ml ${formatDiluentShort(group.plan.defaultDiluent)}`;
       const finalText = `补足至${formatLoose(group.finalVolumeMl)}ml`;
       if (group.plan.practiceType === "oxaliplatin" && group.plan.formType === "powder") {
-        return `${doseText}粉针，复溶后加${diluentText}，${finalText}`;
+        return `${doseText}粉针，复溶后药液约${formatLoose(group.rawVolumeMl)}ml+${diluentText}，总量${formatLoose(group.finalVolumeMl)}ml`;
       }
       return `${doseText}+${diluentText}，${finalText}`;
     }
