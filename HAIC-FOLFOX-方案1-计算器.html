@@ -159,6 +159,26 @@
       box-shadow: 0 0 0 4px rgba(19, 93, 102, 0.08);
     }
 
+    .check-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .check-row input {
+      width: 20px;
+      height: 20px;
+      padding: 0;
+    }
+
     .button-row {
       display: flex;
       gap: 10px;
@@ -487,6 +507,29 @@
               <span class="metric-value" id="bsaValue">--</span>
               <span class="metric-sub">Mosteller：√(身高 cm × 体重 kg ÷ 3600)</span>
             </article>
+            <div class="check-grid" aria-label="修正体表面积">
+              <label class="check-row">
+                <input id="adjustLiverB" type="checkbox">
+                B级肝功
+              </label>
+              <label class="check-row">
+                <input id="adjustTace" type="checkbox">
+                联合TACE
+              </label>
+              <label class="check-row">
+                <input id="adjustPostOp" type="checkbox">
+                手术后灌注
+              </label>
+              <label class="check-row">
+                <input id="adjustLargeTumor" type="checkbox">
+                肿瘤&gt;10cm
+              </label>
+            </div>
+            <article class="metric">
+              <span class="metric-label">修正后体表面积</span>
+              <span class="metric-value" id="adjustedBsaValue">--</span>
+              <span class="metric-sub">前三项每项 ×70%，肿瘤&gt;10cm ×110%</span>
+            </article>
           </div>
         </section>
 
@@ -646,7 +689,12 @@
     const resetButton = document.getElementById("resetButton");
     const results = document.getElementById("results");
     const bsaValue = document.getElementById("bsaValue");
+    const adjustedBsaValue = document.getElementById("adjustedBsaValue");
     const syringeMaxMlInput = document.getElementById("syringeMaxMl");
+    const adjustLiverBInput = document.getElementById("adjustLiverB");
+    const adjustTaceInput = document.getElementById("adjustTace");
+    const adjustPostOpInput = document.getElementById("adjustPostOp");
+    const adjustLargeTumorInput = document.getElementById("adjustLargeTumor");
 
     function round(value, digits) {
       const factor = 10 ** digits;
@@ -659,6 +707,19 @@
 
     function computeBsa(heightCm, weightKg) {
       return Math.sqrt((heightCm * weightKg) / 3600);
+    }
+
+    function computeAdjustedBsa(bsa) {
+      let adjusted = bsa;
+      [adjustLiverBInput, adjustTaceInput, adjustPostOpInput].forEach((input) => {
+        if (input.checked) {
+          adjusted *= 0.7;
+        }
+      });
+      if (adjustLargeTumorInput.checked) {
+        adjusted *= 1.1;
+      }
+      return adjusted;
     }
 
     function getConfig() {
@@ -1148,16 +1209,19 @@
       if (!heightCm || !weightKg || heightCm <= 0 || weightKg <= 0) {
         results.innerHTML = "";
         bsaValue.textContent = "--";
+        adjustedBsaValue.textContent = "--";
         return;
       }
 
       const bsa = computeBsa(heightCm, weightKg);
+      const adjustedBsa = computeAdjustedBsa(bsa);
       const config = getConfig();
-      const plans = buildPlanSet(bsa, config);
+      const plans = buildPlanSet(adjustedBsa, config);
 
       results.innerHTML = "";
       results.appendChild(createPlanSheet(plans, config));
       bsaValue.textContent = `${format(bsa)} m²`;
+      adjustedBsaValue.textContent = `${format(adjustedBsa)} m²`;
     }
 
     function resetForm() {
@@ -1177,6 +1241,10 @@
       fuBolusMinutesInput.value = "30";
       fuInfusionHoursInput.value = "46";
       fuTargetConcInput.value = "10";
+      adjustLiverBInput.checked = false;
+      adjustTaceInput.checked = false;
+      adjustPostOpInput.checked = false;
+      adjustLargeTumorInput.checked = false;
       renderResults();
       heightInput.focus();
     }
@@ -1197,7 +1265,11 @@
       fuBolusModeInput,
       fuBolusMinutesInput,
       fuInfusionHoursInput,
-      fuTargetConcInput
+      fuTargetConcInput,
+      adjustLiverBInput,
+      adjustTaceInput,
+      adjustPostOpInput,
+      adjustLargeTumorInput
     ].forEach((element) => {
       element.addEventListener("change", renderResults);
     });
@@ -1216,6 +1288,9 @@
       if (event.key === "Enter") {
         renderResults();
       }
+    });
+    [heightInput, weightInput].forEach((element) => {
+      element.addEventListener("input", renderResults);
     });
 
     heightInput.value = "170";
