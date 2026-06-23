@@ -1281,7 +1281,8 @@
         return null;
       }
 
-      return solve(totalUnits) || [totalVials];
+      const result = solve(totalUnits) || [totalVials];
+      return result.sort((a, b) => a - b);
     }
 
     function assignIntegerRates(groupCount, totalHours, syringeMaxMl) {
