@@ -1235,29 +1235,53 @@
     function ensureMinimumGroupCount(groups, minGroupCount) {
       const expandedGroups = groups.map((group) => ({ ...group }));
       while (expandedGroups.length < minGroupCount) {
-        const splitIndex = expandedGroups.findIndex((group) => group.vialCount > 0.5);
+        const splitIndex = expandedGroups.findIndex((group) => Math.abs(group.vialCount - 2) < 1e-9);
         if (splitIndex === -1) {
           break;
         }
         const current = expandedGroups[splitIndex];
-        const firstPart = round(current.vialCount - 0.5, 1);
-        const secondPart = 0.5;
-        const replacement = [];
-        if (firstPart > 0) {
-          replacement.push({
-            vialCount: firstPart,
-            rawVolumeMl: round((firstPart * current.plan.vialMg) / current.plan.concentrationMgPerMl, 2),
-            plan: current.plan
-          });
-        }
-        replacement.push({
-          vialCount: secondPart,
-          rawVolumeMl: round((secondPart * current.plan.vialMg) / current.plan.concentrationMgPerMl, 2),
+        const replacement = [1, 1].map((part) => ({
+          vialCount: part,
+          rawVolumeMl: round((part * current.plan.vialMg) / current.plan.concentrationMgPerMl, 2),
           plan: current.plan
-        });
+        }));
         expandedGroups.splice(splitIndex, 1, ...replacement);
       }
       return expandedGroups;
+    }
+
+    function buildAllowedVialGroups(totalVials, maxGroupVials) {
+      const allowedUnits = maxGroupVials >= 2 ? [4, 3, 2] : [3, 2];
+      const totalUnits = Math.round(totalVials * 2);
+      const memo = new Map();
+
+      function solve(units) {
+        if (units === 0) {
+          return [];
+        }
+        if (memo.has(units)) {
+          return memo.get(units);
+        }
+        for (const chunk of allowedUnits) {
+          if (chunk > units) {
+            continue;
+          }
+          const remainder = units - chunk;
+          if (remainder !== 0 && remainder < 2) {
+            continue;
+          }
+          const tail = solve(remainder);
+          if (tail) {
+            const result = [chunk / 2, ...tail];
+            memo.set(units, result);
+            return result;
+          }
+        }
+        memo.set(units, null);
+        return null;
+      }
+
+      return solve(totalUnits) || [totalVials];
     }
 
     function assignIntegerRates(groupCount, totalHours, syringeMaxMl) {
@@ -1298,25 +1322,13 @@
     }
 
     function buildPracticeGroups(plan, targetGroupVials) {
-      const groups = [];
-      const groupVials = Math.max(1, targetGroupVials);
-      let remaining = plan.dispenseVials;
-      while (remaining > 0) {
-        let vialCount;
-        if (remaining > groupVials) {
-          const tail = round(remaining - groupVials, 1);
-          vialCount = Math.abs(tail - 0.5) < 1e-9 ? round(groupVials + 0.5, 1) : groupVials;
-        } else {
-          vialCount = remaining;
-        }
-        const rawVolumeMl = round((vialCount * plan.vialMg) / plan.concentrationMgPerMl, 2);
-        groups.push({
-          vialCount,
-          rawVolumeMl,
-          plan
-        });
-        remaining = round(remaining - vialCount, 1);
-      }
+      const maxGroupVials = Math.max(1, targetGroupVials);
+      const initialVialGroups = buildAllowedVialGroups(plan.dispenseVials, maxGroupVials);
+      const groups = initialVialGroups.map((vialCount) => ({
+        vialCount,
+        rawVolumeMl: round((vialCount * plan.vialMg) / plan.concentrationMgPerMl, 2),
+        plan
+      }));
       const minimumGroupCount = Math.ceil((plan.durationHours * 5) / plan.syringeMaxMl);
       const scheduledGroups = ensureMinimumGroupCount(groups, minimumGroupCount);
       const rates = assignIntegerRates(scheduledGroups.length, plan.durationHours, plan.syringeMaxMl);
@@ -1332,14 +1344,7 @@
       });
     }
 
-    function isHalfVial(vialCount) {
-      return Math.abs(vialCount - 0.5) < 1e-9;
-    }
-
     function formatVialUsage(vialCount) {
-      if (isHalfVial(vialCount)) {
-        return "半支";
-      }
       return `${formatLoose(vialCount, 1)}支`;
     }
 
