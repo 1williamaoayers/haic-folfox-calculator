@@ -514,7 +514,7 @@
               5-FU 团注方式
               <select id="fuBolusMode">
                 <option value="bolus" selected>保留 400 mg/m² 团注</option>
-                <option value="merged">不单独团注，全部并入持续滴注</option>
+                <option value="merged">不单独团注，仅持续滴注 2400 mg/m²</option>
               </select>
             </label>
             <label>
@@ -619,7 +619,7 @@
         badge: "500 mg/支",
         defaultDiluent: "生理盐水",
         detail: "5-FU 默认按 50 mg/mL 理论浓度估算原药体积。",
-        warning: "若不单独团注而全部并入持续滴注，则持续滴注总量会包含原本 400 mg/m² 团注部分。"
+        warning: "若不单独团注，则本页按取消 400 mg/m² 团注处理；持续滴注仍按 2400 mg/m² 计算。"
       }
     };
 
@@ -684,11 +684,9 @@
       }
     }
 
-    function createPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl, vialRounding = "ceil") {
+    function createPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl) {
       const theoreticalVials = doseMg / drug.vialMg;
-      const dispenseVials = vialRounding === "nearest"
-        ? Math.max(1, Math.round(theoreticalVials))
-        : Math.ceil(theoreticalVials);
+      const dispenseVials = Math.ceil(theoreticalVials);
       const remainderMg = round((dispenseVials * drug.vialMg) - doseMg, 1);
       const rawVolumeMl = round(doseMg / drug.concentrationMgPerMl, 2);
       const byConcentrationCount = Math.ceil(doseMg / (maxAllowedFinalConcentrationMgPerMl * syringeMaxMl));
@@ -790,7 +788,7 @@
       const oxDoseMg = round(bsa * config.oxDose, 1);
       const lvDoseMg = round(bsa * config.lvDose, 1);
       const fuBolusDoseMg = config.fuBolusMode === "bolus" ? round(bsa * 400, 1) : 0;
-      const fuInfusionDosePerM2 = config.fuBolusMode === "bolus" ? 2400 : 2800;
+      const fuInfusionDosePerM2 = 2400;
       const fuInfusionDoseMg = round(bsa * fuInfusionDosePerM2, 1);
 
       const oxPlan = createOxaliplatinPlan(
@@ -825,10 +823,9 @@
           fuBolusDoseMg,
           config.fuBolusMinutes / 60,
           `动脉团注 ${config.fuBolusMinutes} min`,
-          "本项为单独 5-FU 团注；若本中心不单独团注，可改为并入持续滴注。",
+          "本项为单独 5-FU 团注；若本中心不单独团注，可取消本项。",
           config.fuTargetConc,
-          config.syringeMaxMl,
-          "nearest"
+          config.syringeMaxMl
         );
         fuBolusPlan.practiceType = "fuBolus";
         plans.push(fuBolusPlan);
@@ -841,7 +838,7 @@
         `动脉持续滴注 ${config.fuInfusionHours} h`,
         config.fuBolusMode === "bolus"
           ? "本项仅含 2400 mg/m² 持续滴注部分。"
-          : "本项已把原本 400 mg/m² 团注并入持续滴注，总量按 2800 mg/m² 计算。",
+          : "本项按取消 400 mg/m² 团注处理，仅含 2400 mg/m² 持续滴注部分。",
         config.fuTargetConc,
         config.syringeMaxMl
       );
@@ -938,12 +935,13 @@
       }
 
       if (plan.practiceType === "fuBolus") {
+        const duration = plan.durationHours / plan.dispenseVials;
         return [
           makePracticeEntry(
             `500mgX1支氟尿嘧啶+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
             plan.dispenseVials,
-            plan.durationHours,
-            syringeMl / plan.durationHours
+            duration,
+            syringeMl / duration
           )
         ];
       }
