@@ -1235,14 +1235,7 @@
       const groupVials = Math.max(1, targetGroupVials);
       let remaining = plan.dispenseVials;
       while (remaining > 0) {
-        let vialCount;
-        if (remaining > groupVials) {
-          vialCount = groupVials;
-        } else if (remaining > 1 && remaining % 1 === 0.5) {
-          vialCount = Math.floor(remaining);
-        } else {
-          vialCount = remaining;
-        }
+        const vialCount = remaining > groupVials ? groupVials : remaining;
         const rawVolumeMl = round((vialCount * plan.vialMg) / plan.concentrationMgPerMl, 2);
         groups.push({
           vialCount,
