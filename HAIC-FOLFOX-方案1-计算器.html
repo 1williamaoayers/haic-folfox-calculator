@@ -1012,7 +1012,15 @@
     }
 
     function roundVialCount(theoreticalVials) {
-      return Math.max(1, Math.ceil(theoreticalVials - 1e-9));
+      const whole = Math.floor(theoreticalVials);
+      const fraction = theoreticalVials - whole;
+      if (fraction < 0.3) {
+        return Math.max(1, whole);
+      }
+      if (fraction < 0.8) {
+        return Math.max(1, whole + 0.5);
+      }
+      return Math.max(1, whole + 1);
     }
 
     function createPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl) {
@@ -1062,7 +1070,7 @@
       const theoreticalVials = doseMg / drug.vialMg;
       const dispenseVials = roundVialCount(theoreticalVials);
       const remainderMg = round((dispenseVials * drug.vialMg) - doseMg, 1);
-      const syringeCount = Math.max(1, dispenseVials);
+      const syringeCount = Math.max(1, Math.ceil(dispenseVials));
       const finalVolumeMl = syringeCount * syringeMaxMl;
       const rateMlPerHour = round(finalVolumeMl / durationHours, 2);
       const durationPerSyringeHours = round(durationHours / syringeCount, 2);
@@ -1072,7 +1080,10 @@
       let remainingDose = doseMg;
       let remainingRawVolume = rawVolumeMl;
       for (let i = 0; i < syringeCount; i += 1) {
-        const groupDose = i === syringeCount - 1 ? round(remainingDose, 1) : Math.min(drug.vialMg, round(remainingDose, 1));
+        const plannedDose = i === syringeCount - 1
+          ? round(remainingDose, 1)
+          : Math.min(drug.vialMg, round(remainingDose, 1));
+        const groupDose = plannedDose;
         const groupRawVolume = i === syringeCount - 1 ? round(remainingRawVolume, 2) : round(groupDose / drug.concentrationMgPerMl, 2);
         doses.push({
           doseMg: groupDose,
@@ -1223,28 +1234,47 @@
       const groups = [];
       const groupVials = Math.max(1, targetGroupVials);
       let remaining = plan.dispenseVials;
-      const groupCount = Math.ceil(plan.dispenseVials / groupVials);
-      const durationHours = plan.durationHours / groupCount;
       while (remaining > 0) {
-        const vialCount = Math.min(groupVials, remaining);
+        let vialCount;
+        if (remaining > groupVials) {
+          vialCount = groupVials;
+        } else if (remaining > 1 && remaining % 1 === 0.5) {
+          vialCount = Math.floor(remaining);
+        } else {
+          vialCount = remaining;
+        }
         const rawVolumeMl = round((vialCount * plan.vialMg) / plan.concentrationMgPerMl, 2);
         groups.push({
           vialCount,
           rawVolumeMl,
-          diluentMl: round(Math.max(0, plan.syringeMaxMl - rawVolumeMl), 2),
-          durationHours,
-          rateMlPerHour: plan.syringeMaxMl / durationHours
+          diluentMl: round(Math.max(0, plan.syringeMaxMl - rawVolumeMl), 2)
         });
-        remaining -= vialCount;
+        remaining = round(remaining - vialCount, 1);
       }
-      return groups;
+      const durationHours = plan.durationHours / groups.length;
+      return groups.map((group) => ({
+        ...group,
+        durationHours,
+        rateMlPerHour: plan.syringeMaxMl / durationHours
+      }));
+    }
+
+    function isHalfVial(vialCount) {
+      return Math.abs(vialCount - 0.5) < 1e-9;
+    }
+
+    function formatVialUsage(vialCount) {
+      if (isHalfVial(vialCount)) {
+        return "半支";
+      }
+      return `${formatLoose(vialCount, 1)}支`;
     }
 
     function buildMixName(plan, vialCount) {
       if (plan.practiceType === "oxaliplatin") {
-        return `${plan.vialMg}mg奥沙利铂`;
+        return `${plan.vialMg}mgX${formatVialUsage(vialCount)}奥沙利铂`;
       }
-      return `${plan.vialMg}mgX${vialCount}支${plan.name}`;
+      return `${plan.vialMg}mgX${formatVialUsage(vialCount)}${plan.name}`;
     }
 
     function mergePracticeGroups(groups) {
@@ -1339,7 +1369,7 @@
       });
 
       const fuPlanCount = plans.filter((plan) => plan.key === "fu");
-      const fuVialTotal = fuPlanCount.reduce((sum, plan) => sum + plan.dispenseVials, 0);
+      const fuVialTotal = round(fuPlanCount.reduce((sum, plan) => sum + plan.dispenseVials, 0), 1);
       const oxPlan = plans.find((plan) => plan.key === "oxaliplatin");
       const lvPlan = plans.find((plan) => plan.key === "leucovorin");
       const fuSpecPlan = plans.find((plan) => plan.key === "fu");
@@ -1353,9 +1383,9 @@
         }),
         "",
         "备药",
-        `${oxPlan.productName} ${oxPlan.badge} ${oxVials}支`,
-        `${lvPlan.productName} ${lvPlan.badge} ${lvVials}支`,
-        `${fuSpecPlan.productName} ${fuSpecPlan.badge} ${fuVialTotal}支`
+        `${oxPlan.productName} ${oxPlan.badge} ${formatLoose(oxVials, 1)}支`,
+        `${lvPlan.productName} ${lvPlan.badge} ${formatLoose(lvVials, 1)}支`,
+        `${fuSpecPlan.productName} ${fuSpecPlan.badge} ${formatLoose(fuVialTotal, 1)}支`
       ];
 
       const section = document.createElement("section");
@@ -1372,9 +1402,9 @@
         </div>
         <div class="prep-box">
           <p><strong>备药</strong></p>
-          <p>${oxPlan.productName} ${oxPlan.badge} ${oxVials}支</p>
-          <p>${lvPlan.productName} ${lvPlan.badge} ${lvVials}支</p>
-          <p>${fuSpecPlan.productName} ${fuSpecPlan.badge} ${fuVialTotal}支</p>
+          <p>${oxPlan.productName} ${oxPlan.badge} ${formatLoose(oxVials, 1)}支</p>
+          <p>${lvPlan.productName} ${lvPlan.badge} ${formatLoose(lvVials, 1)}支</p>
+          <p>${fuSpecPlan.productName} ${fuSpecPlan.badge} ${formatLoose(fuVialTotal, 1)}支</p>
         </div>
       `;
       const copyButton = section.querySelector("[data-copy-sheet]");
@@ -1410,8 +1440,8 @@
             <span class="value">${format(plan.theoreticalVials)} 支</span>
           </div>
           <div class="drug-stat">
-            <span class="label">整支备药数</span>
-            <span class="value">${plan.dispenseVials} 支</span>
+            <span class="label">实际配药支数</span>
+            <span class="value">${formatLoose(plan.dispenseVials, 1)} 支</span>
           </div>
           <div class="drug-stat">
             <span class="label">总泵速</span>
@@ -1427,6 +1457,7 @@
           <p class="mix-text">理论原药总体积：<strong>${format(plan.rawVolumeMl)} mL</strong>（按 ${plan.concentrationMgPerMl} mg/mL 计算）</p>
           <p class="mix-text">允许最高终浓度：<strong>${format(plan.maxAllowedFinalConcentrationMgPerMl)} mg/mL</strong>，据此理论总稀释量约 <strong>${format(plan.requiredTotalDilutionMl)} mL</strong>。</p>
           <p class="mix-text">总最终体积：<strong>${format(plan.finalVolumeMl)} mL</strong>，分为 <strong>${plan.syringeCount}</strong> 支 ${format(plan.syringeMaxMl, 0)}ml 注射器。</p>
+          <p class="mix-text">当前按“整支优先，必要时半支”取整，实际配药为 <strong>${formatLoose(plan.dispenseVials, 1)} 支</strong>。</p>
           <p class="mix-text">浓度依据：${plan.labelSupport}</p>
           <p class="mix-text">${plan.fixedByVial ? buildOxaliplatinScheduleText(plan) : buildScheduleText(plan)}</p>
         </div>
