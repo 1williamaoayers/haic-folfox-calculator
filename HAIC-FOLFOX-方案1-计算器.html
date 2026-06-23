@@ -884,7 +884,6 @@
           detail: "5-FU 注射液按 50 mg/mL 理论浓度估算原药体积。",
           warning: "若不单独团注，则本页按取消 400 mg/m² 团注处理；持续滴注仍按 2400 mg/m² 计算。",
           practiceGroupVials: 2,
-          bolusPracticeGroupVials: 1,
           doseFactor: 1
         },
         {
@@ -901,7 +900,6 @@
           detail: "5-FU 注射液按 25 mg/mL 理论浓度估算原药体积。",
           warning: "若不单独团注，则本页按取消 400 mg/m² 团注处理；持续滴注仍按 2400 mg/m² 计算。",
           practiceGroupVials: 2,
-          bolusPracticeGroupVials: 2,
           doseFactor: 1
         }
       ]
@@ -1235,7 +1233,13 @@
       const groupVials = Math.max(1, targetGroupVials);
       let remaining = plan.dispenseVials;
       while (remaining > 0) {
-        const vialCount = remaining > groupVials ? groupVials : remaining;
+        let vialCount;
+        if (remaining > groupVials) {
+          const tail = round(remaining - groupVials, 1);
+          vialCount = Math.abs(tail - 0.5) < 1e-9 ? round(groupVials + 0.5, 1) : groupVials;
+        } else {
+          vialCount = remaining;
+        }
         const rawVolumeMl = round((vialCount * plan.vialMg) / plan.concentrationMgPerMl, 2);
         groups.push({
           vialCount,
@@ -1310,10 +1314,7 @@
     }
 
     function buildCompactEntries(plan) {
-      let targetGroupVials = plan.practiceGroupVials || 1;
-      if (plan.practiceType === "fuBolus" && plan.bolusPracticeGroupVials) {
-        targetGroupVials = plan.bolusPracticeGroupVials;
-      }
+      const targetGroupVials = plan.practiceGroupVials || 1;
       const rawGroups = buildPracticeGroups(plan, targetGroupVials).map((group) => ({
         ...group,
         count: 1,
