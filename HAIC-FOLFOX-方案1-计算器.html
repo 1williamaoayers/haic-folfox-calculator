@@ -250,11 +250,6 @@
       gap: 8px;
     }
 
-    .copy-row {
-      display: flex;
-      justify-content: flex-start;
-    }
-
     .plan-header p {
       color: var(--muted);
       line-height: 1.75;
@@ -484,7 +479,7 @@
             </label>
             <label>
               每支注射器最大总量（mL）
-              <input id="syringeMaxMl" type="number" inputmode="decimal" min="1" max="60" step="1" value="50">
+              <input id="syringeMaxMl" type="number" inputmode="decimal" min="1" max="60" step="1" value="60">
             </label>
             <label>
               奥沙利铂剂量
@@ -709,15 +704,6 @@
       const diluentPerSyringeMl = round(Math.max(0, syringeMaxMl - rawPerSyringeMl), 2);
       const durationPerSyringeHours = round(durationHours / syringeCount, 2);
       const finalConcentrationMgPerMl = round(dosePerSyringeMg / syringeMaxMl, 2);
-      const groupBreakdown = Array.from({ length: syringeCount }, () => ({
-        doseMg: dosePerSyringeMg,
-        rawVolumeMl: rawPerSyringeMl,
-        diluentMl: diluentPerSyringeMl,
-        finalVolumeMl: syringeMaxMl,
-        finalConcentrationMgPerMl,
-        durationHours: durationPerSyringeHours,
-        rateMlPerHour
-      }));
       const concentrationStatus = drug.minFinalConcentrationMgPerMl
         ? (finalConcentrationMgPerMl >= drug.minFinalConcentrationMgPerMl && finalConcentrationMgPerMl <= maxAllowedFinalConcentrationMgPerMl)
         : finalConcentrationMgPerMl <= maxAllowedFinalConcentrationMgPerMl;
@@ -743,8 +729,7 @@
         concentrationStatus,
         maxAllowedFinalConcentrationMgPerMl,
         requiredTotalDilutionMl: round(doseMg / maxAllowedFinalConcentrationMgPerMl, 2),
-        syringeMaxMl,
-        groupBreakdown
+        syringeMaxMl
       };
     }
 
@@ -765,13 +750,10 @@
         const groupDose = i === syringeCount - 1 ? round(remainingDose, 1) : Math.min(50, round(remainingDose, 1));
         const groupRawVolume = i === syringeCount - 1 ? round(remainingRawVolume, 2) : round(groupDose / drug.concentrationMgPerMl, 2);
         doses.push({
-        doseMg: groupDose,
-        rawVolumeMl: groupRawVolume,
-          finalVolumeMl: syringeMaxMl,
+          doseMg: groupDose,
+          rawVolumeMl: groupRawVolume,
           diluentMl: round(Math.max(0, syringeMaxMl - groupRawVolume), 2),
-          finalConcentrationMgPerMl: round(groupDose / syringeMaxMl, 2),
-          durationHours: durationPerSyringeHours,
-          rateMlPerHour
+          finalConcentrationMgPerMl: round(groupDose / syringeMaxMl, 2)
         });
         remainingDose = round(remainingDose - groupDose, 1);
         remainingRawVolume = round(remainingRawVolume - groupRawVolume, 2);
@@ -917,74 +899,101 @@
       };
     }
 
-    function makeFlushEntry() {
-      return makePracticeEntry("5%葡萄糖50ml冲管", 1, 0.25, 200);
-    }
-
-    function groupLabel(plan, group) {
-      const vialEquivalent = group.doseMg / plan.vialMg;
-      const nearWholeVial = Math.abs(vialEquivalent - Math.round(vialEquivalent)) < 0.02;
-      const vialText = nearWholeVial
-        ? `约${Math.round(vialEquivalent)}支`
-        : `约${format(vialEquivalent, 2)}支`;
-      const diluent = formatDiluentShort(plan.defaultDiluent);
-
-      return `${format(group.doseMg, 1)}mg${plan.name}（${vialText}，取原药${format(group.rawVolumeMl)}ml）+${format(group.diluentMl)}ml ${diluent}，补足至${format(group.finalVolumeMl, 0)}ml`;
-    }
-
     function buildCompactEntries(plan) {
-      const grouped = new Map();
+      const syringeMl = plan.syringeMaxMl;
 
-      plan.groupBreakdown.forEach((group) => {
-        const mix = groupLabel(plan, group);
-        const key = `${mix}|${group.durationHours}|${group.rateMlPerHour}`;
-        const existing = grouped.get(key);
-        if (existing) {
-          existing.count += 1;
-        } else {
-          grouped.set(key, {
-            mix,
-            count: 1,
-            durationHours: group.durationHours,
-            rateMlPerHour: group.rateMlPerHour
-          });
-        }
-      });
-
-      return Array.from(grouped.values()).map((entry) => (
-        makePracticeEntry(entry.mix, entry.count, entry.durationHours, entry.rateMlPerHour)
-      ));
-    }
-
-    async function copyText(text) {
-      if (navigator.clipboard && window.isSecureContext) {
-        try {
-          await navigator.clipboard.writeText(text);
-          return;
-        } catch (error) {
-          // Fall through to the textarea fallback for restricted webviews.
-        }
+      if (plan.practiceType === "oxaliplatin") {
+        const count = plan.dispenseVials;
+        const duration = plan.durationHours / count;
+        return [
+          makePracticeEntry(
+            `50mg奥沙利铂+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
+            count,
+            duration,
+            syringeMl / duration
+          )
+        ];
       }
 
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.setAttribute("readonly", "");
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      textarea.remove();
+      if (plan.practiceType === "leucovorin") {
+        const fullGroups = Math.floor(plan.dispenseVials / 2);
+        const tailVials = plan.dispenseVials % 2;
+        const groupCount = fullGroups + tailVials;
+        const duration = plan.durationHours / groupCount;
+        const entries = [];
+        if (fullGroups > 0) {
+          entries.push(makePracticeEntry(
+            `200mg亚叶酸钙+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
+            fullGroups,
+            duration,
+            syringeMl / duration
+          ));
+        }
+        if (tailVials > 0) {
+          entries.push(makePracticeEntry(
+            `100mg亚叶酸钙+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
+            1,
+            duration,
+            syringeMl / duration
+          ));
+        }
+        return entries;
+      }
+
+      if (plan.practiceType === "fuBolus") {
+        const duration = plan.durationHours / plan.dispenseVials;
+        return [
+          makePracticeEntry(
+            `500mgX1支氟尿嘧啶+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
+            plan.dispenseVials,
+            duration,
+            syringeMl / duration
+          )
+        ];
+      }
+
+      if (plan.practiceType === "fuInfusion") {
+        const entries = [];
+        const twoVialGroups = Math.floor(plan.dispenseVials / 2);
+        const tailVials = plan.dispenseVials % 2;
+
+        if (twoVialGroups > 0) {
+          const firstBlock = Math.min(2, twoVialGroups);
+          entries.push(makePracticeEntry(
+            "500mgX2支氟尿嘧啶+48ml 生理盐水",
+            firstBlock,
+            12,
+            4
+          ));
+
+          const remainingTwoVialGroups = twoVialGroups - firstBlock;
+          if (remainingTwoVialGroups > 0) {
+            entries.push(makePracticeEntry(
+              "500mgX2支氟尿嘧啶+48ml 生理盐水",
+              remainingTwoVialGroups,
+              12,
+              4
+            ));
+          }
+        }
+
+        if (tailVials > 0) {
+          entries.push(makePracticeEntry(
+            "500mgX1支氟尿嘧啶+40ml 生理盐水",
+            1,
+            10,
+            4
+          ));
+        }
+
+        return entries;
+      }
+
+      return [];
     }
 
     function createPlanSheet(plans, config) {
-      const compactEntries = [];
-      plans.forEach((plan) => {
-        compactEntries.push(...buildCompactEntries(plan));
-        if (plan.key === "oxaliplatin" || plan.key === "leucovorin") {
-          compactEntries.push(makeFlushEntry());
-        }
-      });
+      const compactEntries = plans.flatMap((plan) => buildCompactEntries(plan));
       const items = compactEntries.map((entry, index) => {
         const prefix = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"][index] || `${index + 1}.`;
         return `
@@ -994,33 +1003,15 @@
           </article>
         `;
       });
-      const copyLines = [
-        "配药单",
-        ...compactEntries.flatMap((entry, index) => {
-          const prefix = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"][index] || `${index + 1}.`;
-          return [`${prefix}${entry.mix}`, entry.summary];
-        })
-      ];
 
       const fuPlanCount = plans.filter((plan) => plan.key === "fu");
       const fuVialTotal = fuPlanCount.reduce((sum, plan) => sum + plan.dispenseVials, 0);
-      const prepLines = [
-        "备药",
-        `注射用奥沙利铂 50mg ${plans.find((plan) => plan.key === "oxaliplatin").dispenseVials}支`,
-        `注射用亚叶酸钙 100mg ${plans.find((plan) => plan.key === "leucovorin").dispenseVials}支`,
-        `注射用氟尿嘧啶 500mg ${fuVialTotal}支`
-      ];
-      const copyContent = [...copyLines, "", ...prepLines].join("\n");
 
       const section = document.createElement("section");
       section.className = "plan-sheet";
       section.innerHTML = `
         <div class="plan-header">
           <h2 class="section-title" style="margin-bottom: 0;">配药单</h2>
-          <p>执行顺序：奥沙利铂 → 亚叶酸钙 → 5-FU 团注/持续滴注。以下按当前身高、体重、剂量和规定总时长自动排程。</p>
-          <div class="copy-row">
-            <button class="btn-secondary" type="button" data-copy-sheet>一键复制</button>
-          </div>
         </div>
         <div class="plan-list">
           ${items.join("")}
@@ -1032,14 +1023,6 @@
           <p>注射用氟尿嘧啶 500mg ${fuVialTotal}支</p>
         </div>
       `;
-      const copyButton = section.querySelector("[data-copy-sheet]");
-      copyButton.addEventListener("click", async () => {
-        await copyText(copyContent);
-        copyButton.textContent = "已复制";
-        window.setTimeout(() => {
-          copyButton.textContent = "一键复制";
-        }, 1400);
-      });
 
       return section;
     }
@@ -1110,16 +1093,13 @@
 
       results.innerHTML = "";
       results.appendChild(createPlanSheet(plans, config));
-      plans.forEach((plan) => {
-        results.appendChild(createDrugCard(plan));
-      });
       bsaValue.textContent = `${format(bsa)} m²`;
     }
 
     function resetForm() {
       heightInput.value = "170";
       weightInput.value = "60";
-      syringeMaxMlInput.value = "50";
+      syringeMaxMlInput.value = "60";
       oxDoseInput.value = "85";
       oxHoursInput.value = "2";
       oxConcModeInput.value = "hai";
