@@ -684,11 +684,15 @@
       }
     }
 
-    function createPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl, vialRounding = "ceil") {
+    function roundVialCount(theoreticalVials) {
+      const whole = Math.floor(theoreticalVials);
+      const fraction = theoreticalVials - whole;
+      return Math.max(1, whole + (fraction >= 0.7 ? 1 : 0));
+    }
+
+    function createPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl) {
       const theoreticalVials = doseMg / drug.vialMg;
-      const dispenseVials = vialRounding === "floor"
-        ? Math.max(1, Math.floor(theoreticalVials))
-        : Math.ceil(theoreticalVials);
+      const dispenseVials = roundVialCount(theoreticalVials);
       const remainderMg = round((dispenseVials * drug.vialMg) - doseMg, 1);
       const rawVolumeMl = round(doseMg / drug.concentrationMgPerMl, 2);
       const byConcentrationCount = Math.ceil(doseMg / (maxAllowedFinalConcentrationMgPerMl * syringeMaxMl));
@@ -731,7 +735,7 @@
 
     function createOxaliplatinPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl) {
       const theoreticalVials = doseMg / drug.vialMg;
-      const dispenseVials = Math.ceil(theoreticalVials);
+      const dispenseVials = roundVialCount(theoreticalVials);
       const remainderMg = round((dispenseVials * drug.vialMg) - doseMg, 1);
       const syringeCount = Math.max(1, dispenseVials);
       const finalVolumeMl = syringeCount * syringeMaxMl;
@@ -827,8 +831,7 @@
           `动脉团注 ${config.fuBolusMinutes} min`,
           "本项为单独 5-FU 团注；若本中心不单独团注，可取消本项。",
           config.fuTargetConc,
-          config.syringeMaxMl,
-          "floor"
+          config.syringeMaxMl
         );
         fuBolusPlan.practiceType = "fuBolus";
         plans.push(fuBolusPlan);
