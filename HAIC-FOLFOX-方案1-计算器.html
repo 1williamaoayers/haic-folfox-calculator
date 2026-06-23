@@ -1228,6 +1228,75 @@
       return Number.isInteger(count) ? String(count) : format(count);
     }
 
+    function formatRateShort(rate) {
+      return String(Math.round(rate));
+    }
+
+    function ensureMinimumGroupCount(groups, minGroupCount) {
+      const expandedGroups = groups.map((group) => ({ ...group }));
+      while (expandedGroups.length < minGroupCount) {
+        const splitIndex = expandedGroups.findIndex((group) => group.vialCount > 0.5);
+        if (splitIndex === -1) {
+          break;
+        }
+        const current = expandedGroups[splitIndex];
+        const firstPart = round(current.vialCount - 0.5, 1);
+        const secondPart = 0.5;
+        const replacement = [];
+        if (firstPart > 0) {
+          replacement.push({
+            vialCount: firstPart,
+            rawVolumeMl: round((firstPart * current.plan.vialMg) / current.plan.concentrationMgPerMl, 2),
+            plan: current.plan
+          });
+        }
+        replacement.push({
+          vialCount: secondPart,
+          rawVolumeMl: round((secondPart * current.plan.vialMg) / current.plan.concentrationMgPerMl, 2),
+          plan: current.plan
+        });
+        expandedGroups.splice(splitIndex, 1, ...replacement);
+      }
+      return expandedGroups;
+    }
+
+    function assignIntegerRates(groupCount, totalHours, syringeMaxMl) {
+      const averageRate = (syringeMaxMl * groupCount) / totalHours;
+      const baseRate = Math.max(5, Math.floor(averageRate));
+      const rates = Array(groupCount).fill(baseRate);
+      let totalDuration = rates.reduce((sum, rate) => sum + (syringeMaxMl / rate), 0);
+
+      if (totalDuration <= totalHours + 1e-9) {
+        return rates;
+      }
+
+      for (let guard = 0; guard < 5000 && totalDuration - totalHours > 1e-9; guard += 1) {
+        let bestIndex = -1;
+        let bestDuration = totalDuration;
+        let bestDiff = Math.abs(totalDuration - totalHours);
+
+        rates.forEach((rate, index) => {
+          const nextRate = rate + 1;
+          const nextDuration = totalDuration - (syringeMaxMl / rate) + (syringeMaxMl / nextRate);
+          const nextDiff = Math.abs(nextDuration - totalHours);
+          if (nextDiff < bestDiff - 1e-9) {
+            bestIndex = index;
+            bestDuration = nextDuration;
+            bestDiff = nextDiff;
+          }
+        });
+
+        if (bestIndex === -1) {
+          break;
+        }
+
+        rates[bestIndex] += 1;
+        totalDuration = bestDuration;
+      }
+
+      return rates.sort((a, b) => a - b);
+    }
+
     function buildPracticeGroups(plan, targetGroupVials) {
       const groups = [];
       const groupVials = Math.max(1, targetGroupVials);
@@ -1244,16 +1313,23 @@
         groups.push({
           vialCount,
           rawVolumeMl,
-          diluentMl: round(Math.max(0, plan.syringeMaxMl - rawVolumeMl), 2)
+          plan
         });
         remaining = round(remaining - vialCount, 1);
       }
-      const durationHours = plan.durationHours / groups.length;
-      return groups.map((group) => ({
-        ...group,
-        durationHours,
-        rateMlPerHour: plan.syringeMaxMl / durationHours
-      }));
+      const minimumGroupCount = Math.ceil((plan.durationHours * 5) / plan.syringeMaxMl);
+      const scheduledGroups = ensureMinimumGroupCount(groups, minimumGroupCount);
+      const rates = assignIntegerRates(scheduledGroups.length, plan.durationHours, plan.syringeMaxMl);
+      return scheduledGroups.map((group, index) => {
+        const rateMlPerHour = rates[index];
+        return {
+          ...group,
+          finalVolumeMl: plan.syringeMaxMl,
+          diluentMl: round(Math.max(0, plan.syringeMaxMl - group.rawVolumeMl), 2),
+          durationHours: round(plan.syringeMaxMl / rateMlPerHour, 2),
+          rateMlPerHour
+        };
+      });
     }
 
     function isHalfVial(vialCount) {
@@ -1278,7 +1354,7 @@
       const merged = [];
       groups.forEach((group) => {
         const mix = `${buildMixName(group.plan, group.vialCount)}+${formatLoose(group.diluentMl)}ml ${formatDiluentShort(group.plan.defaultDiluent)}`;
-        const summary = `共${formatCount(group.count)}组 每组${formatDurationShort(group.durationHours)} ${format(group.rateMlPerHour, 0)}ml/h`;
+        const summary = `共${formatCount(group.count)}组 每组${formatDurationShort(group.durationHours)} ${formatRateShort(group.rateMlPerHour)}ml/h`;
         const last = merged[merged.length - 1];
         if (
           last
@@ -1287,7 +1363,7 @@
           && round(last.rateMlPerHour, 2) === round(group.rateMlPerHour, 2)
         ) {
           last.count += group.count;
-          last.summary = `共${formatCount(last.count)}组 每组${formatDurationShort(last.durationHours)} ${format(last.rateMlPerHour, 0)}ml/h`;
+          last.summary = `共${formatCount(last.count)}组 每组${formatDurationShort(last.durationHours)} ${formatRateShort(last.rateMlPerHour)}ml/h`;
         } else {
           merged.push({
             mix,
@@ -1305,7 +1381,7 @@
       return {
         groupCount: count,
         mix: `一组配药:${mix}`,
-        summary: `共${formatCount(count)}组 每组${formatDurationShort(durationHours)} ${format(rateMlPerHour, 0)}ml/h`
+        summary: `共${formatCount(count)}组 每组${formatDurationShort(durationHours)} ${formatRateShort(rateMlPerHour)}ml/h`
       };
     }
 
