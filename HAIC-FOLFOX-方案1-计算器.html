@@ -585,8 +585,8 @@
             <label>
               亚叶酸/左亚叶酸剂型/规格
               <select id="lvSpec">
-                <option value="lv-calcium-solution-100" selected>亚叶酸钙注射液 100mg/10mL</option>
-                <option value="lv-calcium-powder-100">注射用亚叶酸钙 100mg/支</option>
+                <option value="lv-calcium-solution-100">亚叶酸钙注射液 100mg/10mL</option>
+                <option value="lv-calcium-powder-100" selected>注射用亚叶酸钙 100mg/支</option>
                 <option value="lv-left-solution-25">左亚叶酸钙注射液 25mg/2.5mL</option>
                 <option value="lv-left-solution-50">左亚叶酸钙注射液 50mg/5mL</option>
                 <option value="lv-left-solution-100">左亚叶酸钙注射液 100mg/10mL</option>
@@ -743,6 +743,7 @@
           productName: "注射用亚叶酸钙",
           vialMg: 100,
           concentrationMgPerMl: 10,
+          formType: "powder",
           labelSupport: "注射用亚叶酸钙按复溶后 10 mg/mL 理论浓度估算原药体积。",
           badge: "100 mg/支",
           defaultDiluent: "5%葡萄糖",
@@ -818,6 +819,7 @@
           productName: "注射用左亚叶酸钙",
           vialMg: 25,
           concentrationMgPerMl: 10,
+          formType: "powder",
           labelSupport: "左亚叶酸钙与亚叶酸钙不是同一剂量口径；本页按约 1/2 等效剂量换算。",
           badge: "25 mg/支",
           defaultDiluent: "5%葡萄糖",
@@ -833,6 +835,7 @@
           productName: "注射用左亚叶酸钙",
           vialMg: 50,
           concentrationMgPerMl: 10,
+          formType: "powder",
           labelSupport: "左亚叶酸钙与亚叶酸钙不是同一剂量口径；本页按约 1/2 等效剂量换算。",
           badge: "50 mg/支",
           defaultDiluent: "5%葡萄糖",
@@ -848,6 +851,7 @@
           productName: "注射用左亚叶酸钙",
           vialMg: 100,
           concentrationMgPerMl: 10,
+          formType: "powder",
           labelSupport: "左亚叶酸钙与亚叶酸钙不是同一剂量口径；本页按约 1/2 等效剂量换算。",
           badge: "100 mg/支",
           defaultDiluent: "5%葡萄糖",
@@ -863,6 +867,7 @@
           productName: "注射用左亚叶酸钙",
           vialMg: 150,
           concentrationMgPerMl: 10,
+          formType: "powder",
           labelSupport: "左亚叶酸钙与亚叶酸钙不是同一剂量口径；本页按约 1/2 等效剂量换算。",
           badge: "150 mg/支",
           defaultDiluent: "5%葡萄糖",
@@ -1388,7 +1393,7 @@
       const doseText = buildDoseMixName(group.plan, group);
       const diluentText = `${formatLoose(group.diluentMl)}ml ${formatDiluentShort(group.plan.defaultDiluent)}`;
       const finalText = `补足至${formatLoose(group.finalVolumeMl)}ml`;
-      if (group.plan.practiceType === "oxaliplatin" && group.plan.formType === "powder") {
+      if (group.plan.formType === "powder") {
         return `${doseText}粉针，复溶后药液约${formatLoose(group.rawVolumeMl)}ml+${diluentText}，总量${formatLoose(group.finalVolumeMl)}ml`;
       }
       return `${doseText}+${diluentText}，${finalText}`;
@@ -1615,7 +1620,7 @@
       oxTargetConcInput.readOnly = true;
       lvDoseInput.value = "200";
       lvHoursInput.value = "1";
-      lvSpecInput.value = "lv-calcium-solution-100";
+      lvSpecInput.value = "lv-calcium-powder-100";
       lvRouteInput.value = "动脉滴注";
       lvTargetConcInput.value = "10";
       fuBolusModeInput.value = "bolus";
