@@ -965,14 +965,17 @@
         const entries = [];
         const twoVialGroups = Math.floor(plan.dispenseVials / 2);
         const tailVials = plan.dispenseVials % 2;
+        const durationScale = plan.durationHours / 46;
+        const twoVialDuration = 12 * durationScale;
+        const oneVialDuration = 10 * durationScale;
 
         if (twoVialGroups > 0) {
           const firstBlock = Math.min(2, twoVialGroups);
           entries.push(makePracticeEntry(
             "500mgX2支氟尿嘧啶+48ml 生理盐水",
             firstBlock,
-            12,
-            4
+            twoVialDuration,
+            48 / twoVialDuration
           ));
 
           const remainingTwoVialGroups = twoVialGroups - firstBlock;
@@ -980,8 +983,8 @@
             entries.push(makePracticeEntry(
               "500mgX2支氟尿嘧啶+48ml 生理盐水",
               remainingTwoVialGroups,
-              12,
-              4
+              twoVialDuration,
+              48 / twoVialDuration
             ));
           }
         }
@@ -990,8 +993,8 @@
           entries.push(makePracticeEntry(
             "500mgX1支氟尿嘧啶+40ml 生理盐水",
             1,
-            10,
-            4
+            oneVialDuration,
+            40 / oneVialDuration
           ));
         }
 
