@@ -511,13 +511,6 @@
               </select>
             </label>
             <label>
-              亚叶酸钙给药途径
-              <select id="lvRoute">
-                <option value="动脉滴注" selected>动脉滴注</option>
-                <option value="静脉滴注">静脉滴注</option>
-              </select>
-            </label>
-            <label>
               5-FU 团注方式
               <select id="fuBolusMode">
                 <option value="bolus" selected>保留 400 mg/m² 团注</option>
@@ -548,6 +541,9 @@
             <input id="oxTargetConc" type="number" min="0.1" max="1.3" step="0.1" value="1.3">
             <input id="lvTargetConc" type="number" min="0.1" max="20" step="0.1" value="10">
             <input id="fuTargetConc" type="number" min="1.5" max="10" step="0.1" value="10">
+            <select id="lvRoute">
+              <option value="动脉滴注" selected>动脉滴注</option>
+            </select>
           </div>
           <div class="button-row">
             <button class="btn-primary" id="calcButton" type="button">立即计算</button>
@@ -816,7 +812,7 @@
         lvDoseMg,
         config.lvHours,
         `${config.lvRoute} ${config.lvHours} h`,
-        `${config.lvRoute} 已按当前选项标注，实际走动脉还是静脉仍以医嘱为准。`,
+        "亚叶酸钙默认按动脉滴注标注。",
         config.lvTargetConc,
         config.syringeMaxMl
       );
