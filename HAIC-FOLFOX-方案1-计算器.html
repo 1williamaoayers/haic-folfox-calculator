@@ -529,7 +529,7 @@
               </select>
             </label>
             <label>
-              亚叶酸钙允许最高终浓度（mg/mL）
+              亚叶酸钙复溶浓度口径（mg/mL）
               <input id="lvTargetConc" type="number" inputmode="decimal" min="0.1" max="20" step="0.1" value="10">
             </label>
             <label>
@@ -555,7 +555,7 @@
               </select>
             </label>
             <label>
-              5-FU 允许最高终浓度（mg/mL）
+              5-FU 输注液浓度上限（mg/mL）
               <input id="fuTargetConc" type="number" inputmode="decimal" min="1.5" max="10" step="0.1" value="10">
             </label>
           </div>
@@ -621,7 +621,7 @@
         name: "亚叶酸钙",
         vialMg: 100,
         concentrationMgPerMl: 10,
-        labelSupport: "说明书明确的是常见复溶浓度 10 mg/mL（部分规格可到 20 mg/mL），HAIC 终浓度需按中心 SOP 或当前输入允许最高终浓度反推最少组数。",
+        labelSupport: "说明书明确 100 mg 瓶常见复溶浓度为 10 mg/mL；这不是 HAIC 专属终浓度。HAIC 文献多给剂量和时长，少给统一配药浓度。",
         badge: "100 mg/支",
         defaultDiluent: "5%葡萄糖",
         detail: "亚叶酸钙默认按复溶后 10 mg/mL 理论浓度估算原药体积。",
@@ -633,7 +633,7 @@
         vialMg: 500,
         concentrationMgPerMl: 50,
         minFinalConcentrationMgPerMl: 1.5,
-        labelSupport: "说明书给出的输注终浓度范围是 1.5–10 mg/mL，本页按不超过你设定的最高终浓度来反推最少组数。",
+        labelSupport: "5-FU 原液常见为 50 mg/mL；部分说明书给出输注液 1.5-10 mg/mL，也有产品建议 2 mg/mL。HAIC 文献多给剂量和时长，少给统一配药浓度。",
         badge: "500 mg/支",
         defaultDiluent: "生理盐水",
         detail: "5-FU 默认按 50 mg/mL 理论浓度估算原药体积。",
