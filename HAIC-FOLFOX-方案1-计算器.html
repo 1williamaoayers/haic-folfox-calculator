@@ -906,11 +906,11 @@
       return Number.isInteger(count) ? String(count) : format(count);
     }
 
-    function makePracticeEntry(mix, count, durationHours, rateMlPerHour, concentrationMgPerMl) {
+    function makePracticeEntry(mix, count, durationHours, rateMlPerHour) {
       return {
         groupCount: count,
         mix: `一组配药:${mix}`,
-        summary: `共${formatCount(count)}组 每组${formatDurationShort(durationHours)} ${format(rateMlPerHour, 0)}ml/h 当前浓度:${format(concentrationMgPerMl, 2)}mg/mL`
+        summary: `共${formatCount(count)}组 每组${formatDurationShort(durationHours)} ${format(rateMlPerHour, 0)}ml/h`
       };
     }
 
@@ -925,8 +925,7 @@
             `50mg奥沙利铂+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
             count,
             duration,
-            syringeMl / duration,
-            50 / syringeMl
+            syringeMl / duration
           )
         ];
       }
@@ -942,8 +941,7 @@
             `200mg亚叶酸钙+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
             fullGroups,
             duration,
-            syringeMl / duration,
-            200 / syringeMl
+            syringeMl / duration
           ));
         }
         if (tailVials > 0) {
@@ -951,8 +949,7 @@
             `100mg亚叶酸钙+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
             1,
             duration,
-            syringeMl / duration,
-            100 / syringeMl
+            syringeMl / duration
           ));
         }
         return entries;
@@ -964,8 +961,7 @@
             `500mgX1支氟尿嘧啶+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
             plan.dispenseVials,
             plan.durationHours,
-            syringeMl / plan.durationHours,
-            500 / syringeMl
+            syringeMl / plan.durationHours
           )
         ];
       }
@@ -981,8 +977,7 @@
             "500mgX2支氟尿嘧啶+48ml 生理盐水",
             firstBlock,
             12,
-            4,
-            1000 / 48
+            4
           ));
 
           const remainingTwoVialGroups = twoVialGroups - firstBlock;
@@ -991,8 +986,7 @@
               "500mgX2支氟尿嘧啶+48ml 生理盐水",
               remainingTwoVialGroups,
               12,
-              4,
-              1000 / 48
+              4
             ));
           }
         }
@@ -1002,8 +996,7 @@
             "500mgX1支氟尿嘧啶+40ml 生理盐水",
             1,
             10,
-            4,
-            500 / 40
+            4
           ));
         }
 
@@ -1032,8 +1025,7 @@
       section.className = "plan-sheet";
       section.innerHTML = `
         <div class="plan-header">
-          <h2 class="section-title" style="margin-bottom: 0;">自动排程配药单</h2>
-          <span class="chip">配药单按整支与固定组方输出，理论小数剂量仅用于核对</span>
+          <h2 class="section-title" style="margin-bottom: 0;">配药单</h2>
         </div>
         <div class="plan-list">
           ${items.join("")}
