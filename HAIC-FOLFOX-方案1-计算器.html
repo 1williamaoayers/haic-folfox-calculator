@@ -250,6 +250,11 @@
       gap: 8px;
     }
 
+    .copy-row {
+      display: flex;
+      justify-content: flex-start;
+    }
+
     .plan-header p {
       color: var(--muted);
       line-height: 1.75;
@@ -951,6 +956,27 @@
       ));
     }
 
+    async function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return;
+        } catch (error) {
+          // Fall through to the textarea fallback for restricted webviews.
+        }
+      }
+
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+
     function createPlanSheet(plans, config) {
       const compactEntries = [];
       plans.forEach((plan) => {
@@ -968,9 +994,23 @@
           </article>
         `;
       });
+      const copyLines = [
+        "配药单",
+        ...compactEntries.flatMap((entry, index) => {
+          const prefix = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"][index] || `${index + 1}.`;
+          return [`${prefix}${entry.mix}`, entry.summary];
+        })
+      ];
 
       const fuPlanCount = plans.filter((plan) => plan.key === "fu");
       const fuVialTotal = fuPlanCount.reduce((sum, plan) => sum + plan.dispenseVials, 0);
+      const prepLines = [
+        "备药",
+        `注射用奥沙利铂 50mg ${plans.find((plan) => plan.key === "oxaliplatin").dispenseVials}支`,
+        `注射用亚叶酸钙 100mg ${plans.find((plan) => plan.key === "leucovorin").dispenseVials}支`,
+        `注射用氟尿嘧啶 500mg ${fuVialTotal}支`
+      ];
+      const copyContent = [...copyLines, "", ...prepLines].join("\n");
 
       const section = document.createElement("section");
       section.className = "plan-sheet";
@@ -978,6 +1018,9 @@
         <div class="plan-header">
           <h2 class="section-title" style="margin-bottom: 0;">配药单</h2>
           <p>执行顺序：奥沙利铂 → 亚叶酸钙 → 5-FU 团注/持续滴注。以下按当前身高、体重、剂量和规定总时长自动排程。</p>
+          <div class="copy-row">
+            <button class="btn-secondary" type="button" data-copy-sheet>一键复制</button>
+          </div>
         </div>
         <div class="plan-list">
           ${items.join("")}
@@ -989,6 +1032,14 @@
           <p>注射用氟尿嘧啶 500mg ${fuVialTotal}支</p>
         </div>
       `;
+      const copyButton = section.querySelector("[data-copy-sheet]");
+      copyButton.addEventListener("click", async () => {
+        await copyText(copyContent);
+        copyButton.textContent = "已复制";
+        window.setTimeout(() => {
+          copyButton.textContent = "一键复制";
+        }, 1400);
+      });
 
       return section;
     }
