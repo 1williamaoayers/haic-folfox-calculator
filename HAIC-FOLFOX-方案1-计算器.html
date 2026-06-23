@@ -250,6 +250,11 @@
       gap: 8px;
     }
 
+    .copy-row {
+      display: flex;
+      justify-content: flex-start;
+    }
+
     .plan-header p {
       color: var(--muted);
       line-height: 1.75;
@@ -899,6 +904,10 @@
       };
     }
 
+    function makeFlushEntry() {
+      return makePracticeEntry("5%葡萄糖50ml冲管", 1, 0.25, 200);
+    }
+
     function buildCompactEntries(plan) {
       const syringeMl = plan.syringeMaxMl;
 
@@ -992,8 +1001,35 @@
       return [];
     }
 
+    async function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return;
+        } catch (error) {
+          // Restricted webviews may deny Clipboard API; use fallback below.
+        }
+      }
+
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+
     function createPlanSheet(plans, config) {
-      const compactEntries = plans.flatMap((plan) => buildCompactEntries(plan));
+      const compactEntries = [];
+      plans.forEach((plan) => {
+        compactEntries.push(...buildCompactEntries(plan));
+        if (plan.key === "oxaliplatin" || plan.key === "leucovorin") {
+          compactEntries.push(makeFlushEntry());
+        }
+      });
       const items = compactEntries.map((entry, index) => {
         const prefix = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"][index] || `${index + 1}.`;
         return `
@@ -1006,23 +1042,48 @@
 
       const fuPlanCount = plans.filter((plan) => plan.key === "fu");
       const fuVialTotal = fuPlanCount.reduce((sum, plan) => sum + plan.dispenseVials, 0);
+      const oxVials = plans.find((plan) => plan.key === "oxaliplatin").dispenseVials;
+      const lvVials = plans.find((plan) => plan.key === "leucovorin").dispenseVials;
+      const copyLines = [
+        "配药单",
+        ...compactEntries.flatMap((entry, index) => {
+          const prefix = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"][index] || `${index + 1}.`;
+          return [`${prefix}${entry.mix}`, entry.summary];
+        }),
+        "",
+        "备药",
+        `注射用奥沙利铂 50mg ${oxVials}支`,
+        `注射用亚叶酸钙 100mg ${lvVials}支`,
+        `注射用氟尿嘧啶 500mg ${fuVialTotal}支`
+      ];
 
       const section = document.createElement("section");
       section.className = "plan-sheet";
       section.innerHTML = `
         <div class="plan-header">
           <h2 class="section-title" style="margin-bottom: 0;">配药单</h2>
+          <div class="copy-row">
+            <button class="btn-secondary" type="button" data-copy-sheet>一键复制</button>
+          </div>
         </div>
         <div class="plan-list">
           ${items.join("")}
         </div>
         <div class="prep-box">
           <p><strong>备药</strong></p>
-          <p>注射用奥沙利铂 50mg ${plans.find((plan) => plan.key === "oxaliplatin").dispenseVials}支</p>
-          <p>注射用亚叶酸钙 100mg ${plans.find((plan) => plan.key === "leucovorin").dispenseVials}支</p>
+          <p>注射用奥沙利铂 50mg ${oxVials}支</p>
+          <p>注射用亚叶酸钙 100mg ${lvVials}支</p>
           <p>注射用氟尿嘧啶 500mg ${fuVialTotal}支</p>
         </div>
       `;
+      const copyButton = section.querySelector("[data-copy-sheet]");
+      copyButton.addEventListener("click", async () => {
+        await copyText(copyLines.join("\n"));
+        copyButton.textContent = "已复制";
+        window.setTimeout(() => {
+          copyButton.textContent = "一键复制";
+        }, 1400);
+      });
 
       return section;
     }
