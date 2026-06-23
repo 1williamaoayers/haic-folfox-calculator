@@ -563,7 +563,7 @@
             <label>
               奥沙利铂剂型/规格
               <select id="oxSpec">
-                <option value="ox-powder-50" selected>注射用奥沙利铂 50mg/支</option>
+                <option value="ox-powder-50" selected>注射用奥沙利铂（粉针）50mg/支</option>
                 <option value="ox-solution-50">奥沙利铂注射液 50mg/10mL</option>
                 <option value="ox-solution-100">奥沙利铂注射液 100mg/20mL</option>
               </select>
@@ -678,6 +678,7 @@
           productName: "注射用奥沙利铂",
           vialMg: 50,
           concentrationMgPerMl: 5,
+          formType: "powder",
           labelSupport: "按当前所选规格估算原药体积；配药单仍按 1 支 = 1 组排程奥沙利铂。",
           badge: "50 mg/支",
           defaultDiluent: "5%葡萄糖",
@@ -693,6 +694,7 @@
           productName: "奥沙利铂注射液",
           vialMg: 50,
           concentrationMgPerMl: 5,
+          formType: "solution",
           labelSupport: "按当前所选注射液规格估算原药体积；配药单按 1 支 = 1 组排程奥沙利铂。",
           badge: "50 mg/10mL",
           defaultDiluent: "5%葡萄糖",
@@ -708,6 +710,7 @@
           productName: "奥沙利铂注射液",
           vialMg: 100,
           concentrationMgPerMl: 5,
+          formType: "solution",
           labelSupport: "按当前所选注射液规格估算原药体积；配药单按 1 支 = 1 组排程奥沙利铂。",
           badge: "100 mg/20mL",
           defaultDiluent: "5%葡萄糖",
@@ -1360,10 +1363,20 @@
         : `${plan.name}约${formatLoose(group.doseMg, 1)}mg（约${formatLoose(theoreticalGroupVials, 2)}支）`;
     }
 
+    function buildGroupMixText(group) {
+      const doseText = buildDoseMixName(group.plan, group);
+      const diluentText = `${formatLoose(group.diluentMl)}ml ${formatDiluentShort(group.plan.defaultDiluent)}`;
+      const finalText = `补足至${formatLoose(group.finalVolumeMl)}ml`;
+      if (group.plan.practiceType === "oxaliplatin" && group.plan.formType === "powder") {
+        return `${doseText}粉针，复溶后加${diluentText}，${finalText}`;
+      }
+      return `${doseText}+${diluentText}，${finalText}`;
+    }
+
     function mergePracticeGroups(groups) {
       const merged = [];
       groups.forEach((group) => {
-        const mix = `${buildDoseMixName(group.plan, group)}+${formatLoose(group.diluentMl)}ml ${formatDiluentShort(group.plan.defaultDiluent)}，补足至${formatLoose(group.finalVolumeMl)}ml`;
+        const mix = buildGroupMixText(group);
         const summary = `共${formatCount(group.count)}组 每组${formatDurationShort(group.durationHours)} ${formatRateShort(group.rateMlPerHour)}ml/h`;
         const last = merged[merged.length - 1];
         if (
