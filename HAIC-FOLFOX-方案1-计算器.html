@@ -1473,6 +1473,9 @@
       const compactEntries = [];
       plans.forEach((plan) => {
         compactEntries.push(...buildCompactEntries(plan));
+        if (plan.key === "oxaliplatin" || plan.key === "leucovorin") {
+          compactEntries.push(makeFlushEntry());
+        }
       });
       const items = compactEntries.map((entry, index) => {
         const prefix = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"][index] || `${index + 1}.`;
