@@ -571,8 +571,8 @@
             <label>
               亚叶酸钙剂量
               <select id="lvDose">
-                <option value="200" selected>200 mg/m²</option>
-                <option value="400">400 mg/m²</option>
+                <option value="200">200 mg/m²</option>
+                <option value="400" selected>400 mg/m²</option>
               </select>
             </label>
             <label>
@@ -1232,27 +1232,9 @@
       return String(Math.round(rate));
     }
 
-    function ensureMinimumGroupCount(groups, minGroupCount) {
-      const expandedGroups = groups.map((group) => ({ ...group }));
-      while (expandedGroups.length < minGroupCount) {
-        const splitIndex = expandedGroups.findIndex((group) => Math.abs(group.vialCount - 2) < 1e-9);
-        if (splitIndex === -1) {
-          break;
-        }
-        const current = expandedGroups[splitIndex];
-        const replacement = [1, 1].map((part) => ({
-          vialCount: part,
-          rawVolumeMl: round((part * current.plan.vialMg) / current.plan.concentrationMgPerMl, 2),
-          plan: current.plan
-        }));
-        expandedGroups.splice(splitIndex, 1, ...replacement);
-      }
-      return expandedGroups;
-    }
-
     function buildAllowedVialGroups(totalVials, maxGroupVials) {
-      const allowedUnits = maxGroupVials >= 2 ? [4, 3, 2] : [3, 2];
       const totalUnits = Math.round(totalVials * 2);
+      const allowedUnits = maxGroupVials >= 2 ? [4, 3, 2] : [2];
       const memo = new Map();
 
       function solve(units) {
@@ -1262,17 +1244,17 @@
         if (memo.has(units)) {
           return memo.get(units);
         }
-        for (const chunk of allowedUnits) {
-          if (chunk > units) {
+        for (const unit of allowedUnits) {
+          if (unit > units) {
             continue;
           }
-          const remainder = units - chunk;
+          const remainder = units - unit;
           if (remainder !== 0 && remainder < 2) {
             continue;
           }
           const tail = solve(remainder);
           if (tail) {
-            const result = [chunk / 2, ...tail];
+            const result = [unit / 2, ...tail];
             memo.set(units, result);
             return result;
           }
@@ -1281,19 +1263,21 @@
         return null;
       }
 
-      const result = solve(totalUnits) || [totalVials];
-      return result.sort((a, b) => a - b);
+      const groups = solve(totalUnits) || [Math.ceil(totalVials)];
+      return groups.sort((a, b) => {
+        const aHalf = Math.abs(a % 1) > 1e-9;
+        const bHalf = Math.abs(b % 1) > 1e-9;
+        if (aHalf !== bHalf) {
+          return aHalf ? 1 : -1;
+        }
+        return a - b;
+      });
     }
 
     function assignIntegerRates(groupCount, totalHours, syringeMaxMl) {
       const averageRate = (syringeMaxMl * groupCount) / totalHours;
-      const baseRate = Math.max(5, Math.floor(averageRate));
-      const rates = Array(groupCount).fill(baseRate);
+      const rates = Array(groupCount).fill(Math.max(5, Math.floor(averageRate)));
       let totalDuration = rates.reduce((sum, rate) => sum + (syringeMaxMl / rate), 0);
-
-      if (totalDuration <= totalHours + 1e-9) {
-        return rates;
-      }
 
       for (let guard = 0; guard < 5000 && totalDuration - totalHours > 1e-9; guard += 1) {
         let bestIndex = -1;
@@ -1314,7 +1298,6 @@
         if (bestIndex === -1) {
           break;
         }
-
         rates[bestIndex] += 1;
         totalDuration = bestDuration;
       }
@@ -1324,21 +1307,28 @@
 
     function buildPracticeGroups(plan, targetGroupVials) {
       const maxGroupVials = Math.max(1, targetGroupVials);
-      const initialVialGroups = buildAllowedVialGroups(plan.dispenseVials, maxGroupVials);
-      const groups = initialVialGroups.map((vialCount) => ({
-        vialCount,
-        rawVolumeMl: round((vialCount * plan.vialMg) / plan.concentrationMgPerMl, 2),
-        plan
-      }));
+      let vialGroups = buildAllowedVialGroups(plan.dispenseVials, maxGroupVials);
       const minimumGroupCount = Math.ceil((plan.durationHours * 5) / plan.syringeMaxMl);
-      const scheduledGroups = ensureMinimumGroupCount(groups, minimumGroupCount);
-      const rates = assignIntegerRates(scheduledGroups.length, plan.durationHours, plan.syringeMaxMl);
-      return scheduledGroups.map((group, index) => {
+      while (vialGroups.length < minimumGroupCount) {
+        const splitIndex = vialGroups.findIndex((vialCount) => Math.abs(vialCount - 2) < 1e-9);
+        if (splitIndex === -1) {
+          break;
+        }
+        vialGroups.splice(splitIndex, 1, 1, 1);
+      }
+      const rates = assignIntegerRates(vialGroups.length, plan.durationHours, plan.syringeMaxMl);
+
+      return vialGroups.map((vialCount, index) => {
+        const doseMg = round(vialCount * plan.vialMg, 1);
+        const rawVolumeMl = round(doseMg / plan.concentrationMgPerMl, 2);
         const rateMlPerHour = rates[index];
         return {
-          ...group,
+          vialCount,
+          doseMg,
+          rawVolumeMl,
+          plan,
           finalVolumeMl: plan.syringeMaxMl,
-          diluentMl: round(Math.max(0, plan.syringeMaxMl - group.rawVolumeMl), 2),
+          diluentMl: round(Math.max(0, plan.syringeMaxMl - rawVolumeMl), 2),
           durationHours: round(plan.syringeMaxMl / rateMlPerHour, 2),
           rateMlPerHour
         };
@@ -1350,16 +1340,30 @@
     }
 
     function buildMixName(plan, vialCount) {
+      return buildDoseMixName(plan, {
+        vialCount,
+        doseMg: vialCount * plan.vialMg
+      });
+    }
+
+    function buildDoseMixName(plan, group) {
+      const fullDoseMg = group.vialCount * plan.vialMg;
+      const isFullDose = Math.abs(group.doseMg - fullDoseMg) < 0.05;
+      const theoreticalGroupVials = group.doseMg / plan.vialMg;
       if (plan.practiceType === "oxaliplatin") {
-        return `${plan.vialMg}mgX${formatVialUsage(vialCount)}奥沙利铂`;
+        return isFullDose
+          ? `${plan.vialMg}mgX${formatVialUsage(group.vialCount)}奥沙利铂`
+          : `奥沙利铂约${formatLoose(group.doseMg, 1)}mg（约${formatLoose(theoreticalGroupVials, 2)}支）`;
       }
-      return `${plan.vialMg}mgX${formatVialUsage(vialCount)}${plan.name}`;
+      return isFullDose
+        ? `${plan.vialMg}mgX${formatVialUsage(group.vialCount)}${plan.name}`
+        : `${plan.name}约${formatLoose(group.doseMg, 1)}mg（约${formatLoose(theoreticalGroupVials, 2)}支）`;
     }
 
     function mergePracticeGroups(groups) {
       const merged = [];
       groups.forEach((group) => {
-        const mix = `${buildMixName(group.plan, group.vialCount)}+${formatLoose(group.diluentMl)}ml ${formatDiluentShort(group.plan.defaultDiluent)}`;
+        const mix = `${buildDoseMixName(group.plan, group)}+${formatLoose(group.diluentMl)}ml ${formatDiluentShort(group.plan.defaultDiluent)}，补足至${formatLoose(group.finalVolumeMl)}ml`;
         const summary = `共${formatCount(group.count)}组 每组${formatDurationShort(group.durationHours)} ${formatRateShort(group.rateMlPerHour)}ml/h`;
         const last = merged[merged.length - 1];
         if (
@@ -1396,18 +1400,6 @@
     }
 
     function buildCompactEntries(plan) {
-      if (plan.practiceType === "oxaliplatin") {
-        const durationHours = plan.durationHours / plan.dispenseVials;
-        return [
-          makePracticeEntry(
-            `${plan.vialMg}mgX1支奥沙利铂+${formatLoose(plan.diluentPerSyringeMl)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
-            plan.dispenseVials,
-            durationHours,
-            plan.syringeMaxMl / durationHours
-          )
-        ];
-      }
-
       const targetGroupVials = plan.practiceGroupVials || 1;
       const rawGroups = buildPracticeGroups(plan, targetGroupVials).map((group) => ({
         ...group,
@@ -1442,9 +1434,6 @@
       const compactEntries = [];
       plans.forEach((plan) => {
         compactEntries.push(...buildCompactEntries(plan));
-        if (plan.key === "oxaliplatin" || plan.key === "leucovorin") {
-          compactEntries.push(makeFlushEntry());
-        }
       });
       const items = compactEntries.map((entry, index) => {
         const prefix = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"][index] || `${index + 1}.`;
@@ -1590,7 +1579,7 @@
       oxConcModeInput.value = "hai";
       oxTargetConcInput.value = "1.3";
       oxTargetConcInput.readOnly = true;
-      lvDoseInput.value = "200";
+      lvDoseInput.value = "400";
       lvHoursInput.value = "1";
       lvSpecInput.value = "lv-calcium-solution-100";
       lvRouteInput.value = "动脉滴注";
