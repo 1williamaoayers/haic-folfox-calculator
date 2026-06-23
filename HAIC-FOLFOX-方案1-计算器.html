@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HAIC FOLFOX 方案1 计算器</title>
+  <style>
+    :root {
+      --bg: #f4efe6;
+      --panel: rgba(255, 250, 242, 0.9);
+      --panel-strong: #fffdf8;
+      --ink: #1e241f;
+      --muted: #58635a;
+      --line: rgba(69, 84, 73, 0.16);
+      --accent: #135d66;
+      --accent-soft: rgba(19, 93, 102, 0.1);
+      --warn: #a84f2d;
+      --warn-soft: rgba(168, 79, 45, 0.1);
+      --shadow: 0 22px 48px rgba(56, 44, 19, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --space-1: 8px;
+      --space-2: 12px;
+      --space-3: 16px;
+      --space-4: 20px;
+      --space-5: 28px;
+      --space-6: 36px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(19, 93, 102, 0.15), transparent 30%),
+        radial-gradient(circle at right 20%, rgba(168, 79, 45, 0.12), transparent 24%),
+        linear-gradient(180deg, #f8f4ed 0%, var(--bg) 58%, #efe6d9 100%);
+      font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      text-wrap: pretty;
+    }
+
+    body {
+      padding: 32px 18px 48px;
+    }
+
+    .app {
+      max-width: 1220px;
+      margin: 0 auto;
+      display: grid;
+      gap: 22px;
+    }
+
+    .hero,
+    .panel,
+    .drug-card {
+      backdrop-filter: blur(16px);
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      border-radius: var(--radius-xl);
+      padding: 30px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(30, 36, 31, 0.06);
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: 0.04em;
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(30px, 5vw, 52px);
+      line-height: 1.03;
+      letter-spacing: -0.03em;
+      max-width: 12ch;
+    }
+
+    .hero p {
+      max-width: 74ch;
+      line-height: 1.72;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+
+    .form-panel {
+      background: var(--panel-strong);
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+
+    .field-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    input,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fff;
+      color: var(--ink);
+      padding: 14px 16px;
+      font-size: 18px;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 140ms ease, box-shadow 140ms ease;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: rgba(19, 93, 102, 0.55);
+      box-shadow: 0 0 0 4px rgba(19, 93, 102, 0.08);
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 13px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 140ms ease, opacity 140ms ease, background 140ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: rgba(30, 36, 31, 0.08);
+      color: var(--ink);
+    }
+
+    .summary-panel {
+      display: grid;
+      gap: 16px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.62);
+      border: 1px solid rgba(69, 84, 73, 0.08);
+    }
+
+    .metric span {
+      display: block;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .metric-value {
+      font-size: clamp(22px, 3vw, 34px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .metric-sub {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .results {
+      display: grid;
+      gap: 18px;
+    }
+
+    .plan-sheet {
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(249, 244, 235, 0.98));
+      border: 1px solid rgba(69, 84, 73, 0.12);
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .plan-header {
+      display: grid;
+      gap: 8px;
+    }
+
+    .plan-header p {
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 14px;
+    }
+
+    .plan-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .plan-item {
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(69, 84, 73, 0.08);
+      line-height: 1.75;
+      font-size: 14px;
+    }
+
+    .plan-item strong {
+      color: var(--ink);
+    }
+
+    .prep-box {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: rgba(19, 93, 102, 0.06);
+      border: 1px solid rgba(19, 93, 102, 0.12);
+      display: grid;
+      gap: 8px;
+    }
+
+    .prep-box p {
+      line-height: 1.75;
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    .drug-card {
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .drug-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .drug-title {
+      display: grid;
+      gap: 7px;
+    }
+
+    .drug-title h3 {
+      font-size: 24px;
+      letter-spacing: -0.03em;
+    }
+
+    .drug-title p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .badge {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .drug-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .drug-stat {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(69, 84, 73, 0.08);
+      display: grid;
+      gap: 8px;
+    }
+
+    .drug-stat .label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .drug-stat .value {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .mix-box {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: #fff;
+      border: 1px solid rgba(69, 84, 73, 0.08);
+      display: grid;
+      gap: 10px;
+    }
+
+    .mix-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .mix-text,
+    .note-list li,
+    .warning p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .warning {
+      padding: 18px;
+      border-radius: var(--radius-md);
+      background: var(--warn-soft);
+      border: 1px solid rgba(168, 79, 45, 0.18);
+      display: grid;
+      gap: 8px;
+    }
+
+    .warning strong {
+      color: var(--warn);
+      font-size: 14px;
+    }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .note-list {
+      margin: 0;
+      padding-left: 20px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .footer {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.75;
+      padding: 0 6px;
+    }
+
+    .footer a {
+      color: var(--accent);
+    }
+
+    @media (max-width: 980px) {
+      .hero-grid,
+      .notes-grid,
+      .drug-grid,
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 18px 12px 32px;
+      }
+
+      .hero,
+      .panel,
+      .drug-card {
+        padding: 18px;
+      }
+
+      h1 {
+        max-width: none;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+      }
+
+      .hero,
+      .panel,
+      .drug-card {
+        box-shadow: none;
+        backdrop-filter: none;
+      }
+
+      .button-row {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <h1>HAIC-FOLFOX</h1>
+      <div class="hero-grid">
+        <section class="panel form-panel">
+          <h2 class="section-title">患者与方案输入</h2>
+          <div class="field-grid">
+            <label>
+              身高（cm）
+              <input id="height" type="number" inputmode="decimal" min="50" max="260" step="0.1" value="170">
+            </label>
+            <label>
+              体重（kg）
+              <input id="weight" type="number" inputmode="decimal" min="10" max="300" step="0.1" value="60">
+            </label>
+            <label>
+              每支注射器最大总量（mL）
+              <input id="syringeMaxMl" type="number" inputmode="decimal" min="1" max="60" step="1" value="60">
+            </label>
+            <label>
+              奥沙利铂剂量
+              <select id="oxDose">
+                <option value="60">60 mg/m²</option>
+                <option value="85" selected>85 mg/m²</option>
+                <option value="130">130 mg/m²</option>
+              </select>
+            </label>
+            <label>
+              奥沙利铂滴注时长
+              <select id="oxHours">
+                <option value="2" selected>2 小时</option>
+                <option value="3">3 小时</option>
+              </select>
+            </label>
+            <label>
+              奥沙利铂浓度依据
+              <select id="oxConcMode">
+                <option value="label">静脉说明书浓度（0.7 mg/mL）</option>
+                <option value="hai" selected>文献稳定性浓度（1.3 mg/mL）</option>
+              </select>
+            </label>
+            <label>
+              奥沙利铂允许最高终浓度（mg/mL）
+              <input id="oxTargetConc" type="number" inputmode="decimal" min="0.1" max="1.3" step="0.1" value="1.3">
+            </label>
+            <label>
+              亚叶酸钙剂量
+              <select id="lvDose">
+                <option value="200" selected>200 mg/m²</option>
+                <option value="400">400 mg/m²</option>
+              </select>
+            </label>
+            <label>
+              亚叶酸钙滴注时长
+              <select id="lvHours">
+                <option value="1" selected>1 小时</option>
+                <option value="2">2 小时</option>
+              </select>
+            </label>
+            <label>
+              亚叶酸钙给药途径
+              <select id="lvRoute">
+                <option value="动脉滴注" selected>动脉滴注</option>
+                <option value="静脉滴注">静脉滴注</option>
+              </select>
+            </label>
+            <label>
+              亚叶酸钙允许最高终浓度（mg/mL）
+              <input id="lvTargetConc" type="number" inputmode="decimal" min="0.1" max="20" step="0.1" value="10">
+            </label>
+            <label>
+              5-FU 团注方式
+              <select id="fuBolusMode">
+                <option value="bolus" selected>保留 400 mg/m² 团注</option>
+                <option value="merged">不单独团注，全部并入持续滴注</option>
+              </select>
+            </label>
+            <label>
+              5-FU 团注时长
+              <select id="fuBolusMinutes">
+                <option value="10">10 分钟</option>
+                <option value="20">20 分钟</option>
+                <option value="30" selected>30 分钟</option>
+              </select>
+            </label>
+            <label>
+              5-FU 持续滴注时长
+              <select id="fuInfusionHours">
+                <option value="23">23 小时</option>
+                <option value="46" selected>46 小时</option>
+              </select>
+            </label>
+            <label>
+              5-FU 允许最高终浓度（mg/mL）
+              <input id="fuTargetConc" type="number" inputmode="decimal" min="1.5" max="10" step="0.1" value="10">
+            </label>
+          </div>
+          <div class="button-row">
+            <button class="btn-primary" id="calcButton" type="button">立即计算</button>
+            <button class="btn-secondary" id="resetButton" type="button">清空</button>
+          </div>
+        </section>
+
+        <section class="panel summary-panel">
+          <h2 class="section-title">核心结果</h2>
+          <div class="summary-grid">
+            <article class="metric">
+              <span class="metric-label">体表面积 BSA</span>
+              <span class="metric-value" id="bsaValue">--</span>
+              <span class="metric-sub">Mosteller：√(身高 cm × 体重 kg ÷ 3600)</span>
+            </article>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="results" id="results"></section>
+
+    <section class="notes-grid">
+      <article class="panel">
+        <h2 class="section-title">关键警示</h2>
+        <div class="warning">
+          <strong>奥沙利铂</strong>
+          <p>不得用生理盐水或其他含氯溶液复溶/稀释；且不能与碱性介质如 5-FU 同袋混合。页面会提示分开配、分开走线。</p>
+        </div>
+        <div class="warning" style="margin-top: 12px;">
+          <strong>亚叶酸钙</strong>
+          <p>不能与 5-FU 在同一输液中混合，说明书提示可能形成沉淀。</p>
+        </div>
+        <div class="warning" style="margin-top: 12px;">
+          <strong>5-FU</strong>
+          <p>持续滴注相关毒性风险更高，是否需要 DPYD/DPD 风险评估、中心静脉或特定泵设置，不由本页代替判断。</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="footer">
+      <p>(c) CDX</p>
+    </section>
+  </main>
+
+  <script>
+    const DRUGS = {
+      oxaliplatin: {
+        key: "oxaliplatin",
+        name: "奥沙利铂",
+        vialMg: 50,
+        concentrationMgPerMl: 5,
+        labelSupport: "当前页面已按你的要求固定为 1 支 50mg = 1 组；浓度口径仅作参考显示，不再决定奥沙利铂组数。",
+        badge: "50 mg/支",
+        defaultDiluent: "5%葡萄糖",
+        detail: "奥沙利铂默认按复溶后 5 mg/mL 理论浓度估算原药体积。",
+        warning: "奥沙利铂不得用生理盐水或其他含氯溶液复溶/稀释，也不能与 5-FU 同袋或同线混合。"
+      },
+      leucovorin: {
+        key: "leucovorin",
+        name: "亚叶酸钙",
+        vialMg: 100,
+        concentrationMgPerMl: 10,
+        labelSupport: "说明书明确的是常见复溶浓度 10 mg/mL（部分规格可到 20 mg/mL），HAIC 终浓度需按中心 SOP 或当前输入允许最高终浓度反推最少组数。",
+        badge: "100 mg/支",
+        defaultDiluent: "5%葡萄糖",
+        detail: "亚叶酸钙默认按复溶后 10 mg/mL 理论浓度估算原药体积。",
+        warning: "亚叶酸钙不能与 5-FU 在同一输液中混合。"
+      },
+      fu: {
+        key: "fu",
+        name: "5-氟尿嘧啶",
+        vialMg: 500,
+        concentrationMgPerMl: 50,
+        minFinalConcentrationMgPerMl: 1.5,
+        labelSupport: "说明书给出的输注终浓度范围是 1.5–10 mg/mL，本页按不超过你设定的最高终浓度来反推最少组数。",
+        badge: "500 mg/支",
+        defaultDiluent: "生理盐水",
+        detail: "5-FU 默认按 50 mg/mL 理论浓度估算原药体积。",
+        warning: "若不单独团注而全部并入持续滴注，则持续滴注总量会包含原本 400 mg/m² 团注部分。"
+      }
+    };
+
+    const heightInput = document.getElementById("height");
+    const weightInput = document.getElementById("weight");
+    const oxDoseInput = document.getElementById("oxDose");
+    const oxHoursInput = document.getElementById("oxHours");
+    const oxConcModeInput = document.getElementById("oxConcMode");
+    const oxTargetConcInput = document.getElementById("oxTargetConc");
+    const lvDoseInput = document.getElementById("lvDose");
+    const lvHoursInput = document.getElementById("lvHours");
+    const lvRouteInput = document.getElementById("lvRoute");
+    const lvTargetConcInput = document.getElementById("lvTargetConc");
+    const fuBolusModeInput = document.getElementById("fuBolusMode");
+    const fuBolusMinutesInput = document.getElementById("fuBolusMinutes");
+    const fuInfusionHoursInput = document.getElementById("fuInfusionHours");
+    const fuTargetConcInput = document.getElementById("fuTargetConc");
+    const calcButton = document.getElementById("calcButton");
+    const resetButton = document.getElementById("resetButton");
+    const results = document.getElementById("results");
+    const bsaValue = document.getElementById("bsaValue");
+    const syringeMaxMlInput = document.getElementById("syringeMaxMl");
+
+    function round(value, digits) {
+      const factor = 10 ** digits;
+      return Math.round(value * factor) / factor;
+    }
+
+    function format(value, digits = 2) {
+      return Number.isFinite(value) ? value.toFixed(digits) : "--";
+    }
+
+    function computeBsa(heightCm, weightKg) {
+      return Math.sqrt((heightCm * weightKg) / 3600);
+    }
+
+    function getConfig() {
+      return {
+        syringeMaxMl: Number(syringeMaxMlInput.value),
+        oxDose: Number(oxDoseInput.value),
+        oxHours: Number(oxHoursInput.value),
+        oxConcMode: oxConcModeInput.value,
+        oxTargetConc: Number(oxTargetConcInput.value),
+        lvDose: Number(lvDoseInput.value),
+        lvHours: Number(lvHoursInput.value),
+        lvRoute: lvRouteInput.value,
+        lvTargetConc: Number(lvTargetConcInput.value),
+        fuBolusMode: fuBolusModeInput.value,
+        fuBolusMinutes: Number(fuBolusMinutesInput.value),
+        fuInfusionHours: Number(fuInfusionHoursInput.value),
+        fuTargetConc: Number(fuTargetConcInput.value)
+      };
+    }
+
+    function syncOxaliplatinConcentrationMode() {
+      if (oxConcModeInput.value === "label") {
+        oxTargetConcInput.value = "0.7";
+        oxTargetConcInput.readOnly = true;
+      } else if (oxConcModeInput.value === "hai") {
+        oxTargetConcInput.value = "1.3";
+        oxTargetConcInput.readOnly = true;
+      }
+    }
+
+    function createPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl, vialRounding = "ceil") {
+      const theoreticalVials = doseMg / drug.vialMg;
+      const dispenseVials = vialRounding === "nearest"
+        ? Math.max(1, Math.round(theoreticalVials))
+        : Math.ceil(theoreticalVials);
+      const remainderMg = round((dispenseVials * drug.vialMg) - doseMg, 1);
+      const rawVolumeMl = round(doseMg / drug.concentrationMgPerMl, 2);
+      const byConcentrationCount = Math.ceil(doseMg / (maxAllowedFinalConcentrationMgPerMl * syringeMaxMl));
+      const syringeCount = Math.max(1, Math.ceil(rawVolumeMl / syringeMaxMl), byConcentrationCount);
+      const finalVolumeMl = syringeCount * syringeMaxMl;
+      const rateMlPerHour = round(finalVolumeMl / durationHours, 2);
+      const dosePerSyringeMg = round(doseMg / syringeCount, 1);
+      const rawPerSyringeMl = round(rawVolumeMl / syringeCount, 2);
+      const diluentPerSyringeMl = round(Math.max(0, syringeMaxMl - rawPerSyringeMl), 2);
+      const durationPerSyringeHours = round(durationHours / syringeCount, 2);
+      const finalConcentrationMgPerMl = round(dosePerSyringeMg / syringeMaxMl, 2);
+      const concentrationStatus = drug.minFinalConcentrationMgPerMl
+        ? (finalConcentrationMgPerMl >= drug.minFinalConcentrationMgPerMl && finalConcentrationMgPerMl <= maxAllowedFinalConcentrationMgPerMl)
+        : finalConcentrationMgPerMl <= maxAllowedFinalConcentrationMgPerMl;
+
+      return {
+        ...drug,
+        doseMg,
+        durationHours,
+        routeText,
+        noteText,
+        theoreticalVials,
+        dispenseVials,
+        remainderMg,
+        rawVolumeMl,
+        syringeCount,
+        finalVolumeMl,
+        rateMlPerHour,
+        dosePerSyringeMg,
+        rawPerSyringeMl,
+        diluentPerSyringeMl,
+        durationPerSyringeHours,
+        finalConcentrationMgPerMl,
+        concentrationStatus,
+        maxAllowedFinalConcentrationMgPerMl,
+        requiredTotalDilutionMl: round(doseMg / maxAllowedFinalConcentrationMgPerMl, 2),
+        syringeMaxMl
+      };
+    }
+
+    function createOxaliplatinPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl) {
+      const theoreticalVials = doseMg / drug.vialMg;
+      const dispenseVials = Math.ceil(theoreticalVials);
+      const remainderMg = round((dispenseVials * drug.vialMg) - doseMg, 1);
+      const syringeCount = Math.max(1, dispenseVials);
+      const finalVolumeMl = syringeCount * syringeMaxMl;
+      const rateMlPerHour = round(finalVolumeMl / durationHours, 2);
+      const durationPerSyringeHours = round(durationHours / syringeCount, 2);
+      const rawVolumeMl = round(doseMg / drug.concentrationMgPerMl, 2);
+
+      const doses = [];
+      let remainingDose = doseMg;
+      let remainingRawVolume = rawVolumeMl;
+      for (let i = 0; i < syringeCount; i += 1) {
+        const groupDose = i === syringeCount - 1 ? round(remainingDose, 1) : Math.min(50, round(remainingDose, 1));
+        const groupRawVolume = i === syringeCount - 1 ? round(remainingRawVolume, 2) : round(groupDose / drug.concentrationMgPerMl, 2);
+        doses.push({
+          doseMg: groupDose,
+          rawVolumeMl: groupRawVolume,
+          diluentMl: round(Math.max(0, syringeMaxMl - groupRawVolume), 2),
+          finalConcentrationMgPerMl: round(groupDose / syringeMaxMl, 2)
+        });
+        remainingDose = round(remainingDose - groupDose, 1);
+        remainingRawVolume = round(remainingRawVolume - groupRawVolume, 2);
+      }
+
+      const maxFinalConcentrationObserved = Math.max(...doses.map((item) => item.finalConcentrationMgPerMl));
+      const concentrationStatus = maxFinalConcentrationObserved <= maxAllowedFinalConcentrationMgPerMl;
+
+      return {
+        ...drug,
+        doseMg,
+        durationHours,
+        routeText,
+        noteText,
+        theoreticalVials,
+        dispenseVials,
+        remainderMg,
+        rawVolumeMl,
+        syringeCount,
+        finalVolumeMl,
+        rateMlPerHour,
+        dosePerSyringeMg: round(doseMg / syringeCount, 1),
+        rawPerSyringeMl: round(rawVolumeMl / syringeCount, 2),
+        diluentPerSyringeMl: round(Math.max(0, syringeMaxMl - round(rawVolumeMl / syringeCount, 2)), 2),
+        durationPerSyringeHours,
+        finalConcentrationMgPerMl: maxFinalConcentrationObserved,
+        concentrationStatus,
+        maxAllowedFinalConcentrationMgPerMl,
+        requiredTotalDilutionMl: round(doseMg / maxAllowedFinalConcentrationMgPerMl, 2),
+        syringeMaxMl,
+        fixedByVial: true,
+        groupBreakdown: doses
+      };
+    }
+
+    function buildPlanSet(bsa, config) {
+      const plans = [];
+      const oxDoseMg = round(bsa * config.oxDose, 1);
+      const lvDoseMg = round(bsa * config.lvDose, 1);
+      const fuBolusDoseMg = config.fuBolusMode === "bolus" ? round(bsa * 400, 1) : 0;
+      const fuInfusionDosePerM2 = config.fuBolusMode === "bolus" ? 2400 : 2800;
+      const fuInfusionDoseMg = round(bsa * fuInfusionDosePerM2, 1);
+
+      const oxPlan = createOxaliplatinPlan(
+        DRUGS.oxaliplatin,
+        oxDoseMg,
+        config.oxHours,
+        `动脉滴注 ${config.oxHours} h`,
+        config.oxConcMode === "label"
+          ? "当前按静脉说明书浓度标注奥沙利铂浓度。"
+          : "当前按文献稳定性浓度标注奥沙利铂浓度；不是动脉给药专属上限。",
+        config.oxTargetConc,
+        config.syringeMaxMl
+      );
+      oxPlan.practiceType = "oxaliplatin";
+      plans.push(oxPlan);
+
+      const lvPlan = createPlan(
+        DRUGS.leucovorin,
+        lvDoseMg,
+        config.lvHours,
+        `${config.lvRoute} ${config.lvHours} h`,
+        `${config.lvRoute} 已按当前选项标注，实际走动脉还是静脉仍以医嘱为准。`,
+        config.lvTargetConc,
+        config.syringeMaxMl
+      );
+      lvPlan.practiceType = "leucovorin";
+      plans.push(lvPlan);
+
+      if (config.fuBolusMode === "bolus") {
+        const fuBolusPlan = createPlan(
+          DRUGS.fu,
+          fuBolusDoseMg,
+          config.fuBolusMinutes / 60,
+          `动脉团注 ${config.fuBolusMinutes} min`,
+          "本项为单独 5-FU 团注；若本中心不单独团注，可改为并入持续滴注。",
+          config.fuTargetConc,
+          config.syringeMaxMl,
+          "nearest"
+        );
+        fuBolusPlan.practiceType = "fuBolus";
+        plans.push(fuBolusPlan);
+      }
+
+      const fuInfusionPlan = createPlan(
+        DRUGS.fu,
+        fuInfusionDoseMg,
+        config.fuInfusionHours,
+        `动脉持续滴注 ${config.fuInfusionHours} h`,
+        config.fuBolusMode === "bolus"
+          ? "本项仅含 2400 mg/m² 持续滴注部分。"
+          : "本项已把原本 400 mg/m² 团注并入持续滴注，总量按 2800 mg/m² 计算。",
+        config.fuTargetConc,
+        config.syringeMaxMl
+      );
+      fuInfusionPlan.practiceType = "fuInfusion";
+      plans.push(fuInfusionPlan);
+
+      return plans;
+    }
+
+    function buildScheduleText(plan) {
+      const hourLabel = plan.durationHours >= 1
+        ? `${format(plan.durationHours)} 小时`
+        : `${format(plan.durationHours * 60, 0)} 分钟`;
+      const perSyringeLabel = plan.durationPerSyringeHours >= 1
+        ? `${format(plan.durationPerSyringeHours)} 小时`
+        : `${format(plan.durationPerSyringeHours * 60, 0)} 分钟`;
+
+      if (plan.syringeCount === 1) {
+        return `建议 1 支 ${format(plan.syringeMaxMl, 0)}ml 注射器：抽取原药 ${format(plan.rawVolumeMl)} mL（约 ${format(plan.doseMg, 1)} mg），再按 ${plan.defaultDiluent} 补足至 ${format(plan.syringeMaxMl, 0)} mL。总时长 ${hourLabel}，泵速 ${format(plan.rateMlPerHour)} mL/h。`;
+      }
+
+      return `建议分 ${plan.syringeCount} 支 ${format(plan.syringeMaxMl, 0)}ml 注射器顺序运行：每支约装 ${format(plan.dosePerSyringeMg, 1)} mg，抽原药 ${format(plan.rawPerSyringeMl)} mL，再按 ${plan.defaultDiluent} 各补足至 ${format(plan.syringeMaxMl, 0)} mL。每支约运行 ${perSyringeLabel}，统一泵速 ${format(plan.rateMlPerHour)} mL/h，总时长 ${hourLabel}。`;
+    }
+
+    function buildOxaliplatinScheduleText(plan) {
+      const perSyringeLabel = plan.durationPerSyringeHours >= 1
+        ? `${format(plan.durationPerSyringeHours)} 小时`
+        : `${format(plan.durationPerSyringeHours * 60, 0)} 分钟`;
+      return `奥沙利铂固定按 1 支 50mg = 1 组：共 ${plan.syringeCount} 组。${plan.groupBreakdown.map((group, index) => `第${index + 1}组约 ${format(group.doseMg, 1)} mg，抽原药 ${format(group.rawVolumeMl)} mL，加 5%葡萄糖 ${format(group.diluentMl)} mL 补足至 ${format(plan.syringeMaxMl, 0)} mL，最终浓度约 ${format(group.finalConcentrationMgPerMl)} mg/mL`).join("；")}。每组约运行 ${perSyringeLabel}，统一泵速 ${format(plan.rateMlPerHour)} mL/h。`;
+    }
+
+    function formatDurationShort(hours) {
+      if (hours >= 1) {
+        return Number.isInteger(hours) ? `${hours}小时` : `${format(hours)}小时`;
+      }
+      return `${format(hours * 60, 0)}分钟`;
+    }
+
+    function formatDiluentShort(name) {
+      return name === "5%葡萄糖" ? "5%糖" : name;
+    }
+
+    function formatCount(count) {
+      return Number.isInteger(count) ? String(count) : format(count);
+    }
+
+    function makePracticeEntry(mix, count, durationHours, rateMlPerHour, concentrationMgPerMl) {
+      return {
+        groupCount: count,
+        mix: `一组配药:${mix}`,
+        summary: `共${formatCount(count)}组 每组${formatDurationShort(durationHours)} ${format(rateMlPerHour, 0)}ml/h 当前浓度:${format(concentrationMgPerMl, 2)}mg/mL`
+      };
+    }
+
+    function buildCompactEntries(plan) {
+      const syringeMl = plan.syringeMaxMl;
+
+      if (plan.practiceType === "oxaliplatin") {
+        const count = plan.dispenseVials;
+        const duration = plan.durationHours / count;
+        return [
+          makePracticeEntry(
+            `50mg奥沙利铂+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
+            count,
+            duration,
+            syringeMl / duration,
+            50 / syringeMl
+          )
+        ];
+      }
+
+      if (plan.practiceType === "leucovorin") {
+        const fullGroups = Math.floor(plan.dispenseVials / 2);
+        const tailVials = plan.dispenseVials % 2;
+        const groupCount = fullGroups + tailVials;
+        const duration = plan.durationHours / groupCount;
+        const entries = [];
+        if (fullGroups > 0) {
+          entries.push(makePracticeEntry(
+            `200mg亚叶酸钙+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
+            fullGroups,
+            duration,
+            syringeMl / duration,
+            200 / syringeMl
+          ));
+        }
+        if (tailVials > 0) {
+          entries.push(makePracticeEntry(
+            `100mg亚叶酸钙+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
+            1,
+            duration,
+            syringeMl / duration,
+            100 / syringeMl
+          ));
+        }
+        return entries;
+      }
+
+      if (plan.practiceType === "fuBolus") {
+        return [
+          makePracticeEntry(
+            `500mgX1支氟尿嘧啶+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
+            plan.dispenseVials,
+            plan.durationHours,
+            syringeMl / plan.durationHours,
+            500 / syringeMl
+          )
+        ];
+      }
+
+      if (plan.practiceType === "fuInfusion") {
+        const entries = [];
+        const twoVialGroups = Math.floor(plan.dispenseVials / 2);
+        const tailVials = plan.dispenseVials % 2;
+
+        if (twoVialGroups > 0) {
+          const firstBlock = Math.min(2, twoVialGroups);
+          entries.push(makePracticeEntry(
+            "500mgX2支氟尿嘧啶+48ml 生理盐水",
+            firstBlock,
+            12,
+            4,
+            1000 / 48
+          ));
+
+          const remainingTwoVialGroups = twoVialGroups - firstBlock;
+          if (remainingTwoVialGroups > 0) {
+            entries.push(makePracticeEntry(
+              "500mgX2支氟尿嘧啶+48ml 生理盐水",
+              remainingTwoVialGroups,
+              12,
+              4,
+              1000 / 48
+            ));
+          }
+        }
+
+        if (tailVials > 0) {
+          entries.push(makePracticeEntry(
+            "500mgX1支氟尿嘧啶+40ml 生理盐水",
+            1,
+            10,
+            4,
+            500 / 40
+          ));
+        }
+
+        return entries;
+      }
+
+      return [];
+    }
+
+    function createPlanSheet(plans, config) {
+      const compactEntries = plans.flatMap((plan) => buildCompactEntries(plan));
+      const items = compactEntries.map((entry, index) => {
+        const prefix = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"][index] || `${index + 1}.`;
+        return `
+          <article class="plan-item">
+            <strong>${prefix}</strong>${entry.mix}<br>
+            ${entry.summary}
+          </article>
+        `;
+      });
+
+      const fuPlanCount = plans.filter((plan) => plan.key === "fu");
+      const fuVialTotal = fuPlanCount.reduce((sum, plan) => sum + plan.dispenseVials, 0);
+
+      const section = document.createElement("section");
+      section.className = "plan-sheet";
+      section.innerHTML = `
+        <div class="plan-header">
+          <h2 class="section-title" style="margin-bottom: 0;">自动排程配药单</h2>
+          <span class="chip">配药单按整支与固定组方输出，理论小数剂量仅用于核对</span>
+        </div>
+        <div class="plan-list">
+          ${items.join("")}
+        </div>
+        <div class="prep-box">
+          <p><strong>备药</strong></p>
+          <p>注射用奥沙利铂 50mg ${plans.find((plan) => plan.key === "oxaliplatin").dispenseVials}支</p>
+          <p>注射用亚叶酸钙 100mg ${plans.find((plan) => plan.key === "leucovorin").dispenseVials}支</p>
+          <p>注射用氟尿嘧啶 500mg ${fuVialTotal}支</p>
+        </div>
+      `;
+
+      return section;
+    }
+
+    function createDrugCard(plan) {
+      const card = document.createElement("article");
+      card.className = "drug-card";
+      card.innerHTML = `
+        <div class="drug-top">
+          <div class="drug-title">
+            <h3>${plan.name}</h3>
+            <p>${plan.routeText} · ${plan.detail} · ${plan.noteText}</p>
+          </div>
+          <span class="badge">${plan.badge}</span>
+        </div>
+        <div class="drug-grid">
+          <div class="drug-stat">
+            <span class="label">总剂量</span>
+            <span class="value">${format(plan.doseMg, 1)} mg</span>
+          </div>
+          <div class="drug-stat">
+            <span class="label">理论支数</span>
+            <span class="value">${format(plan.theoreticalVials)} 支</span>
+          </div>
+          <div class="drug-stat">
+            <span class="label">整支备药数</span>
+            <span class="value">${plan.dispenseVials} 支</span>
+          </div>
+          <div class="drug-stat">
+            <span class="label">总泵速</span>
+            <span class="value">${format(plan.rateMlPerHour)} mL/h</span>
+          </div>
+          <div class="drug-stat">
+            <span class="label">每支最终浓度</span>
+            <span class="value">${format(plan.finalConcentrationMgPerMl)} mg/mL</span>
+          </div>
+        </div>
+        <div class="mix-box">
+          <div class="mix-title">${format(plan.syringeMaxMl, 0)}ml 注射器排程</div>
+          <p class="mix-text">理论原药总体积：<strong>${format(plan.rawVolumeMl)} mL</strong>（按 ${plan.concentrationMgPerMl} mg/mL 计算）</p>
+          <p class="mix-text">允许最高终浓度：<strong>${format(plan.maxAllowedFinalConcentrationMgPerMl)} mg/mL</strong>，据此理论总稀释量约 <strong>${format(plan.requiredTotalDilutionMl)} mL</strong>。</p>
+          <p class="mix-text">总最终体积：<strong>${format(plan.finalVolumeMl)} mL</strong>，分为 <strong>${plan.syringeCount}</strong> 支 ${format(plan.syringeMaxMl, 0)}ml 注射器。</p>
+          <p class="mix-text">浓度依据：${plan.labelSupport}</p>
+          <p class="mix-text">${plan.fixedByVial ? buildOxaliplatinScheduleText(plan) : buildScheduleText(plan)}</p>
+        </div>
+        <div class="warning">
+          <strong>复核点</strong>
+          <p>${plan.warning} ${plan.concentrationStatus ? "当前按本页浓度规则计算后未超出设定上限。" : "当前最终浓度超出设定范围，需增加分组或调整院内配法。"}</p>
+        </div>
+      `;
+
+      return card;
+    }
+
+    function renderResults() {
+      const heightCm = Number(heightInput.value);
+      const weightKg = Number(weightInput.value);
+
+      if (!heightCm || !weightKg || heightCm <= 0 || weightKg <= 0) {
+        results.innerHTML = "";
+        bsaValue.textContent = "--";
+        return;
+      }
+
+      const bsa = computeBsa(heightCm, weightKg);
+      const config = getConfig();
+      const plans = buildPlanSet(bsa, config);
+
+      results.innerHTML = "";
+      results.appendChild(createPlanSheet(plans, config));
+      bsaValue.textContent = `${format(bsa)} m²`;
+    }
+
+    function resetForm() {
+      heightInput.value = "170";
+      weightInput.value = "60";
+      syringeMaxMlInput.value = "60";
+      oxDoseInput.value = "85";
+      oxHoursInput.value = "2";
+      oxConcModeInput.value = "hai";
+      oxTargetConcInput.value = "1.3";
+      oxTargetConcInput.readOnly = true;
+      lvDoseInput.value = "200";
+      lvHoursInput.value = "1";
+      lvRouteInput.value = "动脉滴注";
+      lvTargetConcInput.value = "10";
+      fuBolusModeInput.value = "bolus";
+      fuBolusMinutesInput.value = "30";
+      fuInfusionHoursInput.value = "46";
+      fuTargetConcInput.value = "10";
+      renderResults();
+      heightInput.focus();
+    }
+
+    calcButton.addEventListener("click", renderResults);
+    resetButton.addEventListener("click", resetForm);
+
+    [
+      syringeMaxMlInput,
+      oxDoseInput,
+      oxHoursInput,
+      oxConcModeInput,
+      oxTargetConcInput,
+      lvDoseInput,
+      lvHoursInput,
+      lvRouteInput,
+      lvTargetConcInput,
+      fuBolusModeInput,
+      fuBolusMinutesInput,
+      fuInfusionHoursInput,
+      fuTargetConcInput
+    ].forEach((element) => {
+      element.addEventListener("change", renderResults);
+    });
+
+    oxConcModeInput.addEventListener("change", () => {
+      syncOxaliplatinConcentrationMode();
+      renderResults();
+    });
+
+    heightInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        weightInput.focus();
+      }
+    });
+    weightInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        renderResults();
+      }
+    });
+
+    heightInput.value = "170";
+    weightInput.value = "60";
+    syncOxaliplatinConcentrationMode();
+    renderResults();
+  </script>
+</body>
+</html>
