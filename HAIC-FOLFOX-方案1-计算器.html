@@ -1066,7 +1066,7 @@
 
     function createOxaliplatinPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl) {
       const theoreticalVials = doseMg / drug.vialMg;
-      const dispenseVials = roundVialCount(theoreticalVials);
+      const dispenseVials = Math.max(1, Math.ceil(theoreticalVials - 1e-9));
       const remainderMg = round((dispenseVials * drug.vialMg) - doseMg, 1);
       const syringeCount = Math.max(1, Math.ceil(dispenseVials));
       const finalVolumeMl = syringeCount * syringeMaxMl;
