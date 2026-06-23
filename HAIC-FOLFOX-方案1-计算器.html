@@ -684,9 +684,11 @@
       }
     }
 
-    function createPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl) {
+    function createPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl, vialRounding = "ceil") {
       const theoreticalVials = doseMg / drug.vialMg;
-      const dispenseVials = Math.ceil(theoreticalVials);
+      const dispenseVials = vialRounding === "floor"
+        ? Math.max(1, Math.floor(theoreticalVials))
+        : Math.ceil(theoreticalVials);
       const remainderMg = round((dispenseVials * drug.vialMg) - doseMg, 1);
       const rawVolumeMl = round(doseMg / drug.concentrationMgPerMl, 2);
       const byConcentrationCount = Math.ceil(doseMg / (maxAllowedFinalConcentrationMgPerMl * syringeMaxMl));
@@ -825,7 +827,8 @@
           `动脉团注 ${config.fuBolusMinutes} min`,
           "本项为单独 5-FU 团注；若本中心不单独团注，可取消本项。",
           config.fuTargetConc,
-          config.syringeMaxMl
+          config.syringeMaxMl,
+          "floor"
         );
         fuBolusPlan.practiceType = "fuBolus";
         plans.push(fuBolusPlan);
