@@ -1396,6 +1396,18 @@
     }
 
     function buildCompactEntries(plan) {
+      if (plan.practiceType === "oxaliplatin") {
+        const durationHours = plan.durationHours / plan.dispenseVials;
+        return [
+          makePracticeEntry(
+            `${plan.vialMg}mgX1支奥沙利铂+${formatLoose(plan.diluentPerSyringeMl)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
+            plan.dispenseVials,
+            durationHours,
+            plan.syringeMaxMl / durationHours
+          )
+        ];
+      }
+
       const targetGroupVials = plan.practiceGroupVials || 1;
       const rawGroups = buildPracticeGroups(plan, targetGroupVials).map((group) => ({
         ...group,
