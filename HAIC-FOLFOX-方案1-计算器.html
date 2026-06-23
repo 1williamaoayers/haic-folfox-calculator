@@ -556,6 +556,14 @@
               </select>
             </label>
             <label>
+              奥沙利铂剂型/规格
+              <select id="oxSpec">
+                <option value="ox-powder-50" selected>注射用奥沙利铂 50mg/支</option>
+                <option value="ox-solution-50">奥沙利铂注射液 50mg/10mL</option>
+                <option value="ox-solution-100">奥沙利铂注射液 100mg/20mL</option>
+              </select>
+            </label>
+            <label>
               亚叶酸钙剂量
               <select id="lvDose">
                 <option value="200" selected>200 mg/m²</option>
@@ -567,6 +575,21 @@
               <select id="lvHours">
                 <option value="1" selected>1 小时</option>
                 <option value="2">2 小时</option>
+              </select>
+            </label>
+            <label>
+              亚叶酸/左亚叶酸剂型/规格
+              <select id="lvSpec">
+                <option value="lv-calcium-solution-100" selected>亚叶酸钙注射液 100mg/10mL</option>
+                <option value="lv-calcium-powder-100">注射用亚叶酸钙 100mg/支</option>
+                <option value="lv-left-solution-25">左亚叶酸钙注射液 25mg/2.5mL</option>
+                <option value="lv-left-solution-50">左亚叶酸钙注射液 50mg/5mL</option>
+                <option value="lv-left-solution-100">左亚叶酸钙注射液 100mg/10mL</option>
+                <option value="lv-left-solution-175">左亚叶酸钙注射液 175mg/17.5mL</option>
+                <option value="lv-left-powder-25">注射用左亚叶酸钙 25mg/支</option>
+                <option value="lv-left-powder-50">注射用左亚叶酸钙 50mg/支</option>
+                <option value="lv-left-powder-100">注射用左亚叶酸钙 100mg/支</option>
+                <option value="lv-left-powder-150">注射用左亚叶酸钙 150mg/支</option>
               </select>
             </label>
             <label>
@@ -589,6 +612,13 @@
               <select id="fuInfusionHours">
                 <option value="23">23 小时</option>
                 <option value="46" selected>46 小时</option>
+              </select>
+            </label>
+            <label>
+              5-FU 剂型/规格
+              <select id="fuSpec">
+                <option value="fu-solution-500" selected>氟尿嘧啶注射液 500mg/10mL</option>
+                <option value="fu-solution-250">氟尿嘧啶注射液 250mg/10mL</option>
               </select>
             </label>
           </div>
@@ -634,56 +664,260 @@
   </main>
 
   <script>
-    const DRUGS = {
-      oxaliplatin: {
-        key: "oxaliplatin",
-        name: "奥沙利铂",
-        vialMg: 50,
-        concentrationMgPerMl: 5,
-        labelSupport: "当前页面已按你的要求固定为 1 支 50mg = 1 组；浓度口径仅作参考显示，不再决定奥沙利铂组数。",
-        badge: "50 mg/支",
-        defaultDiluent: "5%葡萄糖",
-        detail: "奥沙利铂默认按复溶后 5 mg/mL 理论浓度估算原药体积。",
-        warning: "奥沙利铂不得用生理盐水或其他含氯溶液复溶/稀释，也不能与 5-FU 同袋或同线混合。"
-      },
-      leucovorin: {
-        key: "leucovorin",
-        name: "亚叶酸钙",
-        vialMg: 100,
-        concentrationMgPerMl: 10,
-        labelSupport: "说明书明确 100 mg 瓶常见复溶浓度为 10 mg/mL；这不是 HAIC 专属终浓度。HAIC 文献多给剂量和时长，少给统一配药浓度。",
-        badge: "100 mg/支",
-        defaultDiluent: "5%葡萄糖",
-        detail: "亚叶酸钙默认按复溶后 10 mg/mL 理论浓度估算原药体积。",
-        warning: "亚叶酸钙不能与 5-FU 在同一输液中混合。"
-      },
-      fu: {
-        key: "fu",
-        name: "5-氟尿嘧啶",
-        vialMg: 500,
-        concentrationMgPerMl: 50,
-        minFinalConcentrationMgPerMl: 1.5,
-        labelSupport: "5-FU 原液常见为 50 mg/mL；部分说明书给出输注液 1.5-10 mg/mL，也有产品建议 2 mg/mL。HAIC 文献多给剂量和时长，少给统一配药浓度。",
-        badge: "500 mg/支",
-        defaultDiluent: "生理盐水",
-        detail: "5-FU 默认按 50 mg/mL 理论浓度估算原药体积。",
-        warning: "若不单独团注，则本页按取消 400 mg/m² 团注处理；持续滴注仍按 2400 mg/m² 计算。"
-      }
+    const DRUG_CATALOGS = {
+      oxaliplatin: [
+        {
+          id: "ox-powder-50",
+          key: "oxaliplatin",
+          name: "奥沙利铂",
+          productName: "注射用奥沙利铂",
+          vialMg: 50,
+          concentrationMgPerMl: 5,
+          labelSupport: "按当前所选规格估算原药体积；配药单仍按 1 支 = 1 组排程奥沙利铂。",
+          badge: "50 mg/支",
+          defaultDiluent: "5%葡萄糖",
+          detail: "注射用奥沙利铂按复溶后 5 mg/mL 理论浓度估算原药体积。",
+          warning: "奥沙利铂不得用生理盐水或其他含氯溶液复溶/稀释，也不能与 5-FU 同袋或同线混合。",
+          practiceGroupVials: 1,
+          doseFactor: 1
+        },
+        {
+          id: "ox-solution-50",
+          key: "oxaliplatin",
+          name: "奥沙利铂",
+          productName: "奥沙利铂注射液",
+          vialMg: 50,
+          concentrationMgPerMl: 5,
+          labelSupport: "按当前所选注射液规格估算原药体积；配药单按 1 支 = 1 组排程奥沙利铂。",
+          badge: "50 mg/10mL",
+          defaultDiluent: "5%葡萄糖",
+          detail: "奥沙利铂注射液按说明书常见 5 mg/mL 原液浓度估算原药体积。",
+          warning: "奥沙利铂不得用生理盐水或其他含氯溶液稀释，也不能与 5-FU 同袋或同线混合。",
+          practiceGroupVials: 1,
+          doseFactor: 1
+        },
+        {
+          id: "ox-solution-100",
+          key: "oxaliplatin",
+          name: "奥沙利铂",
+          productName: "奥沙利铂注射液",
+          vialMg: 100,
+          concentrationMgPerMl: 5,
+          labelSupport: "按当前所选注射液规格估算原药体积；配药单按 1 支 = 1 组排程奥沙利铂。",
+          badge: "100 mg/20mL",
+          defaultDiluent: "5%葡萄糖",
+          detail: "奥沙利铂注射液按说明书常见 5 mg/mL 原液浓度估算原药体积。",
+          warning: "奥沙利铂不得用生理盐水或其他含氯溶液稀释，也不能与 5-FU 同袋或同线混合。",
+          practiceGroupVials: 1,
+          doseFactor: 1
+        }
+      ],
+      leucovorin: [
+        {
+          id: "lv-calcium-solution-100",
+          key: "leucovorin",
+          name: "亚叶酸钙",
+          productName: "亚叶酸钙注射液",
+          vialMg: 100,
+          concentrationMgPerMl: 10,
+          labelSupport: "亚叶酸钙常见说明书口径可按 10 mg/mL 估算原药体积。",
+          badge: "100 mg/10mL",
+          defaultDiluent: "5%葡萄糖",
+          detail: "亚叶酸钙注射液按 10 mg/mL 理论浓度估算原药体积。",
+          warning: "亚叶酸钙不能与 5-FU 在同一输液中混合。",
+          practiceGroupVials: 2,
+          doseFactor: 1
+        },
+        {
+          id: "lv-calcium-powder-100",
+          key: "leucovorin",
+          name: "亚叶酸钙",
+          productName: "注射用亚叶酸钙",
+          vialMg: 100,
+          concentrationMgPerMl: 10,
+          labelSupport: "注射用亚叶酸钙按复溶后 10 mg/mL 理论浓度估算原药体积。",
+          badge: "100 mg/支",
+          defaultDiluent: "5%葡萄糖",
+          detail: "注射用亚叶酸钙按复溶后 10 mg/mL 理论浓度估算原药体积。",
+          warning: "亚叶酸钙不能与 5-FU 在同一输液中混合。",
+          practiceGroupVials: 2,
+          doseFactor: 1
+        },
+        {
+          id: "lv-left-solution-25",
+          key: "leucovorin",
+          name: "左亚叶酸钙",
+          productName: "左亚叶酸钙注射液",
+          vialMg: 25,
+          concentrationMgPerMl: 10,
+          labelSupport: "左亚叶酸钙与亚叶酸钙不是同一剂量口径；本页按约 1/2 等效剂量换算。",
+          badge: "25 mg/2.5mL",
+          defaultDiluent: "5%葡萄糖",
+          detail: "左亚叶酸钙注射液按 10 mg/mL 理论浓度估算原药体积。",
+          warning: "左亚叶酸钙不能与 5-FU 在同一输液中混合。",
+          practiceGroupVials: 2,
+          doseFactor: 0.5
+        },
+        {
+          id: "lv-left-solution-50",
+          key: "leucovorin",
+          name: "左亚叶酸钙",
+          productName: "左亚叶酸钙注射液",
+          vialMg: 50,
+          concentrationMgPerMl: 10,
+          labelSupport: "左亚叶酸钙与亚叶酸钙不是同一剂量口径；本页按约 1/2 等效剂量换算。",
+          badge: "50 mg/5mL",
+          defaultDiluent: "5%葡萄糖",
+          detail: "左亚叶酸钙注射液按 10 mg/mL 理论浓度估算原药体积。",
+          warning: "左亚叶酸钙不能与 5-FU 在同一输液中混合。",
+          practiceGroupVials: 2,
+          doseFactor: 0.5
+        },
+        {
+          id: "lv-left-solution-100",
+          key: "leucovorin",
+          name: "左亚叶酸钙",
+          productName: "左亚叶酸钙注射液",
+          vialMg: 100,
+          concentrationMgPerMl: 10,
+          labelSupport: "左亚叶酸钙与亚叶酸钙不是同一剂量口径；本页按约 1/2 等效剂量换算。",
+          badge: "100 mg/10mL",
+          defaultDiluent: "5%葡萄糖",
+          detail: "左亚叶酸钙注射液按 10 mg/mL 理论浓度估算原药体积。",
+          warning: "左亚叶酸钙不能与 5-FU 在同一输液中混合。",
+          practiceGroupVials: 2,
+          doseFactor: 0.5
+        },
+        {
+          id: "lv-left-solution-175",
+          key: "leucovorin",
+          name: "左亚叶酸钙",
+          productName: "左亚叶酸钙注射液",
+          vialMg: 175,
+          concentrationMgPerMl: 10,
+          labelSupport: "左亚叶酸钙与亚叶酸钙不是同一剂量口径；本页按约 1/2 等效剂量换算。",
+          badge: "175 mg/17.5mL",
+          defaultDiluent: "5%葡萄糖",
+          detail: "左亚叶酸钙注射液按 10 mg/mL 理论浓度估算原药体积。",
+          warning: "左亚叶酸钙不能与 5-FU 在同一输液中混合。",
+          practiceGroupVials: 2,
+          doseFactor: 0.5
+        },
+        {
+          id: "lv-left-powder-25",
+          key: "leucovorin",
+          name: "左亚叶酸钙",
+          productName: "注射用左亚叶酸钙",
+          vialMg: 25,
+          concentrationMgPerMl: 10,
+          labelSupport: "左亚叶酸钙与亚叶酸钙不是同一剂量口径；本页按约 1/2 等效剂量换算。",
+          badge: "25 mg/支",
+          defaultDiluent: "5%葡萄糖",
+          detail: "注射用左亚叶酸钙按复溶后 10 mg/mL 理论浓度估算原药体积。",
+          warning: "左亚叶酸钙不能与 5-FU 在同一输液中混合。",
+          practiceGroupVials: 2,
+          doseFactor: 0.5
+        },
+        {
+          id: "lv-left-powder-50",
+          key: "leucovorin",
+          name: "左亚叶酸钙",
+          productName: "注射用左亚叶酸钙",
+          vialMg: 50,
+          concentrationMgPerMl: 10,
+          labelSupport: "左亚叶酸钙与亚叶酸钙不是同一剂量口径；本页按约 1/2 等效剂量换算。",
+          badge: "50 mg/支",
+          defaultDiluent: "5%葡萄糖",
+          detail: "注射用左亚叶酸钙按复溶后 10 mg/mL 理论浓度估算原药体积。",
+          warning: "左亚叶酸钙不能与 5-FU 在同一输液中混合。",
+          practiceGroupVials: 2,
+          doseFactor: 0.5
+        },
+        {
+          id: "lv-left-powder-100",
+          key: "leucovorin",
+          name: "左亚叶酸钙",
+          productName: "注射用左亚叶酸钙",
+          vialMg: 100,
+          concentrationMgPerMl: 10,
+          labelSupport: "左亚叶酸钙与亚叶酸钙不是同一剂量口径；本页按约 1/2 等效剂量换算。",
+          badge: "100 mg/支",
+          defaultDiluent: "5%葡萄糖",
+          detail: "注射用左亚叶酸钙按复溶后 10 mg/mL 理论浓度估算原药体积。",
+          warning: "左亚叶酸钙不能与 5-FU 在同一输液中混合。",
+          practiceGroupVials: 2,
+          doseFactor: 0.5
+        },
+        {
+          id: "lv-left-powder-150",
+          key: "leucovorin",
+          name: "左亚叶酸钙",
+          productName: "注射用左亚叶酸钙",
+          vialMg: 150,
+          concentrationMgPerMl: 10,
+          labelSupport: "左亚叶酸钙与亚叶酸钙不是同一剂量口径；本页按约 1/2 等效剂量换算。",
+          badge: "150 mg/支",
+          defaultDiluent: "5%葡萄糖",
+          detail: "注射用左亚叶酸钙按复溶后 10 mg/mL 理论浓度估算原药体积。",
+          warning: "左亚叶酸钙不能与 5-FU 在同一输液中混合。",
+          practiceGroupVials: 2,
+          doseFactor: 0.5
+        }
+      ],
+      fu: [
+        {
+          id: "fu-solution-500",
+          key: "fu",
+          name: "5-氟尿嘧啶",
+          productName: "氟尿嘧啶注射液",
+          vialMg: 500,
+          concentrationMgPerMl: 50,
+          minFinalConcentrationMgPerMl: 1.5,
+          labelSupport: "5-FU 注射液常见原液浓度为 50 mg/mL；本页仅按所选规格换算原药体积。",
+          badge: "500 mg/10mL",
+          defaultDiluent: "生理盐水",
+          detail: "5-FU 注射液按 50 mg/mL 理论浓度估算原药体积。",
+          warning: "若不单独团注，则本页按取消 400 mg/m² 团注处理；持续滴注仍按 2400 mg/m² 计算。",
+          practiceGroupVials: 2,
+          bolusPracticeGroupVials: 1,
+          doseFactor: 1
+        },
+        {
+          id: "fu-solution-250",
+          key: "fu",
+          name: "5-氟尿嘧啶",
+          productName: "氟尿嘧啶注射液",
+          vialMg: 250,
+          concentrationMgPerMl: 25,
+          minFinalConcentrationMgPerMl: 1.5,
+          labelSupport: "5-FU 注射液常见原液浓度可见 25 mg/mL 规格；本页仅按所选规格换算原药体积。",
+          badge: "250 mg/10mL",
+          defaultDiluent: "生理盐水",
+          detail: "5-FU 注射液按 25 mg/mL 理论浓度估算原药体积。",
+          warning: "若不单独团注，则本页按取消 400 mg/m² 团注处理；持续滴注仍按 2400 mg/m² 计算。",
+          practiceGroupVials: 2,
+          bolusPracticeGroupVials: 2,
+          doseFactor: 1
+        }
+      ]
     };
 
     const heightInput = document.getElementById("height");
     const weightInput = document.getElementById("weight");
     const oxDoseInput = document.getElementById("oxDose");
     const oxHoursInput = document.getElementById("oxHours");
+    const oxSpecInput = document.getElementById("oxSpec");
     const oxConcModeInput = document.getElementById("oxConcMode");
     const oxTargetConcInput = document.getElementById("oxTargetConc");
     const lvDoseInput = document.getElementById("lvDose");
     const lvHoursInput = document.getElementById("lvHours");
+    const lvSpecInput = document.getElementById("lvSpec");
     const lvRouteInput = document.getElementById("lvRoute");
     const lvTargetConcInput = document.getElementById("lvTargetConc");
     const fuBolusModeInput = document.getElementById("fuBolusMode");
     const fuBolusMinutesInput = document.getElementById("fuBolusMinutes");
     const fuInfusionHoursInput = document.getElementById("fuInfusionHours");
+    const fuSpecInput = document.getElementById("fuSpec");
     const fuTargetConcInput = document.getElementById("fuTargetConc");
     const calcButton = document.getElementById("calcButton");
     const resetButton = document.getElementById("resetButton");
@@ -703,6 +937,13 @@
 
     function format(value, digits = 2) {
       return Number.isFinite(value) ? value.toFixed(digits) : "--";
+    }
+
+    function formatLoose(value, digits = 2) {
+      if (!Number.isFinite(value)) {
+        return "--";
+      }
+      return Number(value.toFixed(digits)).toString();
     }
 
     function computeBsa(heightCm, weightKg) {
@@ -727,16 +968,31 @@
         syringeMaxMl: Number(syringeMaxMlInput.value),
         oxDose: Number(oxDoseInput.value),
         oxHours: Number(oxHoursInput.value),
+        oxSpec: oxSpecInput.value,
         oxConcMode: oxConcModeInput.value,
         oxTargetConc: Number(oxTargetConcInput.value),
         lvDose: Number(lvDoseInput.value),
         lvHours: Number(lvHoursInput.value),
+        lvSpec: lvSpecInput.value,
         lvRoute: lvRouteInput.value,
         lvTargetConc: Number(lvTargetConcInput.value),
         fuBolusMode: fuBolusModeInput.value,
         fuBolusMinutes: Number(fuBolusMinutesInput.value),
         fuInfusionHours: Number(fuInfusionHoursInput.value),
+        fuSpec: fuSpecInput.value,
         fuTargetConc: Number(fuTargetConcInput.value)
+      };
+    }
+
+    function getDrugChoice(groupKey, choiceId) {
+      return DRUG_CATALOGS[groupKey].find((item) => item.id === choiceId) || DRUG_CATALOGS[groupKey][0];
+    }
+
+    function getSelectedDrugs(config) {
+      return {
+        oxaliplatin: getDrugChoice("oxaliplatin", config.oxSpec),
+        leucovorin: getDrugChoice("leucovorin", config.lvSpec),
+        fu: getDrugChoice("fu", config.fuSpec)
       };
     }
 
@@ -751,9 +1007,7 @@
     }
 
     function roundVialCount(theoreticalVials) {
-      const whole = Math.floor(theoreticalVials);
-      const fraction = theoreticalVials - whole;
-      return Math.max(1, whole + (fraction >= 0.7 ? 1 : 0));
+      return Math.max(1, Math.ceil(theoreticalVials - 1e-9));
     }
 
     function createPlan(drug, doseMg, durationHours, routeText, noteText, maxAllowedFinalConcentrationMgPerMl, syringeMaxMl) {
@@ -813,7 +1067,7 @@
       let remainingDose = doseMg;
       let remainingRawVolume = rawVolumeMl;
       for (let i = 0; i < syringeCount; i += 1) {
-        const groupDose = i === syringeCount - 1 ? round(remainingDose, 1) : Math.min(50, round(remainingDose, 1));
+        const groupDose = i === syringeCount - 1 ? round(remainingDose, 1) : Math.min(drug.vialMg, round(remainingDose, 1));
         const groupRawVolume = i === syringeCount - 1 ? round(remainingRawVolume, 2) : round(groupDose / drug.concentrationMgPerMl, 2);
         doses.push({
           doseMg: groupDose,
@@ -857,14 +1111,15 @@
 
     function buildPlanSet(bsa, config) {
       const plans = [];
-      const oxDoseMg = round(bsa * config.oxDose, 1);
-      const lvDoseMg = round(bsa * config.lvDose, 1);
-      const fuBolusDoseMg = config.fuBolusMode === "bolus" ? round(bsa * 400, 1) : 0;
+      const selectedDrugs = getSelectedDrugs(config);
+      const oxDoseMg = round(bsa * config.oxDose * selectedDrugs.oxaliplatin.doseFactor, 1);
+      const lvDoseMg = round(bsa * config.lvDose * selectedDrugs.leucovorin.doseFactor, 1);
+      const fuBolusDoseMg = config.fuBolusMode === "bolus" ? round(bsa * 400 * selectedDrugs.fu.doseFactor, 1) : 0;
       const fuInfusionDosePerM2 = 2400;
-      const fuInfusionDoseMg = round(bsa * fuInfusionDosePerM2, 1);
+      const fuInfusionDoseMg = round(bsa * fuInfusionDosePerM2 * selectedDrugs.fu.doseFactor, 1);
 
       const oxPlan = createOxaliplatinPlan(
-        DRUGS.oxaliplatin,
+        selectedDrugs.oxaliplatin,
         oxDoseMg,
         config.oxHours,
         `动脉滴注 ${config.oxHours} h`,
@@ -878,11 +1133,13 @@
       plans.push(oxPlan);
 
       const lvPlan = createPlan(
-        DRUGS.leucovorin,
+        selectedDrugs.leucovorin,
         lvDoseMg,
         config.lvHours,
         `${config.lvRoute} ${config.lvHours} h`,
-        "亚叶酸钙默认按动脉滴注标注。",
+        selectedDrugs.leucovorin.doseFactor === 0.5
+          ? "当前选择左亚叶酸钙，已按约 1/2 亚叶酸钙等效剂量换算。"
+          : "当前选择亚叶酸钙，按输入剂量直接计算。",
         config.lvTargetConc,
         config.syringeMaxMl
       );
@@ -891,7 +1148,7 @@
 
       if (config.fuBolusMode === "bolus") {
         const fuBolusPlan = createPlan(
-          DRUGS.fu,
+          selectedDrugs.fu,
           fuBolusDoseMg,
           config.fuBolusMinutes / 60,
           `动脉团注 ${config.fuBolusMinutes} min`,
@@ -904,7 +1161,7 @@
       }
 
       const fuInfusionPlan = createPlan(
-        DRUGS.fu,
+        selectedDrugs.fu,
         fuInfusionDoseMg,
         config.fuInfusionHours,
         `动脉持续滴注 ${config.fuInfusionHours} h`,
@@ -939,7 +1196,7 @@
       const perSyringeLabel = plan.durationPerSyringeHours >= 1
         ? `${format(plan.durationPerSyringeHours)} 小时`
         : `${format(plan.durationPerSyringeHours * 60, 0)} 分钟`;
-      return `奥沙利铂固定按 1 支 50mg = 1 组：共 ${plan.syringeCount} 组。${plan.groupBreakdown.map((group, index) => `第${index + 1}组约 ${format(group.doseMg, 1)} mg，抽原药 ${format(group.rawVolumeMl)} mL，加 5%葡萄糖 ${format(group.diluentMl)} mL 补足至 ${format(plan.syringeMaxMl, 0)} mL，最终浓度约 ${format(group.finalConcentrationMgPerMl)} mg/mL`).join("；")}。每组约运行 ${perSyringeLabel}，统一泵速 ${format(plan.rateMlPerHour)} mL/h。`;
+      return `${plan.productName}固定按 1 支 ${plan.vialMg}mg = 1 组：共 ${plan.syringeCount} 组。${plan.groupBreakdown.map((group, index) => `第${index + 1}组约 ${format(group.doseMg, 1)} mg，抽原药 ${format(group.rawVolumeMl)} mL，加 5%葡萄糖 ${format(group.diluentMl)} mL 补足至 ${format(plan.syringeMaxMl, 0)} mL，最终浓度约 ${format(group.finalConcentrationMgPerMl)} mg/mL`).join("；")}。每组约运行 ${perSyringeLabel}，统一泵速 ${format(plan.rateMlPerHour)} mL/h。`;
     }
 
     function formatDurationShort(hours) {
@@ -957,6 +1214,61 @@
       return Number.isInteger(count) ? String(count) : format(count);
     }
 
+    function buildPracticeGroups(plan, targetGroupVials) {
+      const groups = [];
+      const groupVials = Math.max(1, targetGroupVials);
+      let remaining = plan.dispenseVials;
+      const groupCount = Math.ceil(plan.dispenseVials / groupVials);
+      const durationHours = plan.durationHours / groupCount;
+      while (remaining > 0) {
+        const vialCount = Math.min(groupVials, remaining);
+        const rawVolumeMl = round((vialCount * plan.vialMg) / plan.concentrationMgPerMl, 2);
+        groups.push({
+          vialCount,
+          rawVolumeMl,
+          diluentMl: round(Math.max(0, plan.syringeMaxMl - rawVolumeMl), 2),
+          durationHours,
+          rateMlPerHour: plan.syringeMaxMl / durationHours
+        });
+        remaining -= vialCount;
+      }
+      return groups;
+    }
+
+    function buildMixName(plan, vialCount) {
+      if (plan.practiceType === "oxaliplatin") {
+        return `${plan.vialMg}mg奥沙利铂`;
+      }
+      return `${plan.vialMg}mgX${vialCount}支${plan.name}`;
+    }
+
+    function mergePracticeGroups(groups) {
+      const merged = [];
+      groups.forEach((group) => {
+        const mix = `${buildMixName(group.plan, group.vialCount)}+${formatLoose(group.diluentMl)}ml ${formatDiluentShort(group.plan.defaultDiluent)}`;
+        const summary = `共${formatCount(group.count)}组 每组${formatDurationShort(group.durationHours)} ${format(group.rateMlPerHour, 0)}ml/h`;
+        const last = merged[merged.length - 1];
+        if (
+          last
+          && last.mix === mix
+          && last.durationHours === group.durationHours
+          && round(last.rateMlPerHour, 2) === round(group.rateMlPerHour, 2)
+        ) {
+          last.count += group.count;
+          last.summary = `共${formatCount(last.count)}组 每组${formatDurationShort(last.durationHours)} ${format(last.rateMlPerHour, 0)}ml/h`;
+        } else {
+          merged.push({
+            mix,
+            count: group.count,
+            durationHours: group.durationHours,
+            rateMlPerHour: group.rateMlPerHour,
+            summary
+          });
+        }
+      });
+      return merged;
+    }
+
     function makePracticeEntry(mix, count, durationHours, rateMlPerHour) {
       return {
         groupCount: count,
@@ -970,99 +1282,16 @@
     }
 
     function buildCompactEntries(plan) {
-      const syringeMl = plan.syringeMaxMl;
-
-      if (plan.practiceType === "oxaliplatin") {
-        const count = plan.dispenseVials;
-        const duration = plan.durationHours / count;
-        return [
-          makePracticeEntry(
-            `50mg奥沙利铂+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
-            count,
-            duration,
-            syringeMl / duration
-          )
-        ];
+      let targetGroupVials = plan.practiceGroupVials || 1;
+      if (plan.practiceType === "fuBolus" && plan.bolusPracticeGroupVials) {
+        targetGroupVials = plan.bolusPracticeGroupVials;
       }
-
-      if (plan.practiceType === "leucovorin") {
-        const fullGroups = Math.floor(plan.dispenseVials / 2);
-        const tailVials = plan.dispenseVials % 2;
-        const groupCount = fullGroups + tailVials;
-        const duration = plan.durationHours / groupCount;
-        const entries = [];
-        if (fullGroups > 0) {
-          entries.push(makePracticeEntry(
-            `200mg亚叶酸钙+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
-            fullGroups,
-            duration,
-            syringeMl / duration
-          ));
-        }
-        if (tailVials > 0) {
-          entries.push(makePracticeEntry(
-            `100mg亚叶酸钙+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
-            1,
-            duration,
-            syringeMl / duration
-          ));
-        }
-        return entries;
-      }
-
-      if (plan.practiceType === "fuBolus") {
-        const duration = plan.durationHours / plan.dispenseVials;
-        return [
-          makePracticeEntry(
-            `500mgX1支氟尿嘧啶+${format(syringeMl, 0)}ml ${formatDiluentShort(plan.defaultDiluent)}`,
-            plan.dispenseVials,
-            duration,
-            syringeMl / duration
-          )
-        ];
-      }
-
-      if (plan.practiceType === "fuInfusion") {
-        const entries = [];
-        const twoVialGroups = Math.floor(plan.dispenseVials / 2);
-        const tailVials = plan.dispenseVials % 2;
-        const durationScale = plan.durationHours / 46;
-        const twoVialDuration = 12 * durationScale;
-        const oneVialDuration = 10 * durationScale;
-
-        if (twoVialGroups > 0) {
-          const firstBlock = Math.min(2, twoVialGroups);
-          entries.push(makePracticeEntry(
-            "500mgX2支氟尿嘧啶+48ml 生理盐水",
-            firstBlock,
-            twoVialDuration,
-            48 / twoVialDuration
-          ));
-
-          const remainingTwoVialGroups = twoVialGroups - firstBlock;
-          if (remainingTwoVialGroups > 0) {
-            entries.push(makePracticeEntry(
-              "500mgX2支氟尿嘧啶+48ml 生理盐水",
-              remainingTwoVialGroups,
-              twoVialDuration,
-              48 / twoVialDuration
-            ));
-          }
-        }
-
-        if (tailVials > 0) {
-          entries.push(makePracticeEntry(
-            "500mgX1支氟尿嘧啶+40ml 生理盐水",
-            1,
-            oneVialDuration,
-            40 / oneVialDuration
-          ));
-        }
-
-        return entries;
-      }
-
-      return [];
+      const rawGroups = buildPracticeGroups(plan, targetGroupVials).map((group) => ({
+        ...group,
+        count: 1,
+        plan
+      }));
+      return mergePracticeGroups(rawGroups).map((entry) => makePracticeEntry(entry.mix, entry.count, entry.durationHours, entry.rateMlPerHour));
     }
 
     async function copyText(text) {
@@ -1106,8 +1335,11 @@
 
       const fuPlanCount = plans.filter((plan) => plan.key === "fu");
       const fuVialTotal = fuPlanCount.reduce((sum, plan) => sum + plan.dispenseVials, 0);
-      const oxVials = plans.find((plan) => plan.key === "oxaliplatin").dispenseVials;
-      const lvVials = plans.find((plan) => plan.key === "leucovorin").dispenseVials;
+      const oxPlan = plans.find((plan) => plan.key === "oxaliplatin");
+      const lvPlan = plans.find((plan) => plan.key === "leucovorin");
+      const fuSpecPlan = plans.find((plan) => plan.key === "fu");
+      const oxVials = oxPlan.dispenseVials;
+      const lvVials = lvPlan.dispenseVials;
       const copyLines = [
         "配药单",
         ...compactEntries.flatMap((entry, index) => {
@@ -1116,9 +1348,9 @@
         }),
         "",
         "备药",
-        `注射用奥沙利铂 50mg ${oxVials}支`,
-        `注射用亚叶酸钙 100mg ${lvVials}支`,
-        `注射用氟尿嘧啶 500mg ${fuVialTotal}支`
+        `${oxPlan.productName} ${oxPlan.badge} ${oxVials}支`,
+        `${lvPlan.productName} ${lvPlan.badge} ${lvVials}支`,
+        `${fuSpecPlan.productName} ${fuSpecPlan.badge} ${fuVialTotal}支`
       ];
 
       const section = document.createElement("section");
@@ -1135,9 +1367,9 @@
         </div>
         <div class="prep-box">
           <p><strong>备药</strong></p>
-          <p>注射用奥沙利铂 50mg ${oxVials}支</p>
-          <p>注射用亚叶酸钙 100mg ${lvVials}支</p>
-          <p>注射用氟尿嘧啶 500mg ${fuVialTotal}支</p>
+          <p>${oxPlan.productName} ${oxPlan.badge} ${oxVials}支</p>
+          <p>${lvPlan.productName} ${lvPlan.badge} ${lvVials}支</p>
+          <p>${fuSpecPlan.productName} ${fuSpecPlan.badge} ${fuVialTotal}支</p>
         </div>
       `;
       const copyButton = section.querySelector("[data-copy-sheet]");
@@ -1230,16 +1462,19 @@
       syringeMaxMlInput.value = "60";
       oxDoseInput.value = "85";
       oxHoursInput.value = "2";
+      oxSpecInput.value = "ox-powder-50";
       oxConcModeInput.value = "hai";
       oxTargetConcInput.value = "1.3";
       oxTargetConcInput.readOnly = true;
       lvDoseInput.value = "200";
       lvHoursInput.value = "1";
+      lvSpecInput.value = "lv-calcium-solution-100";
       lvRouteInput.value = "动脉滴注";
       lvTargetConcInput.value = "10";
       fuBolusModeInput.value = "bolus";
       fuBolusMinutesInput.value = "30";
       fuInfusionHoursInput.value = "46";
+      fuSpecInput.value = "fu-solution-500";
       fuTargetConcInput.value = "10";
       adjustLiverBInput.checked = false;
       adjustTaceInput.checked = false;
@@ -1256,15 +1491,18 @@
       syringeMaxMlInput,
       oxDoseInput,
       oxHoursInput,
+      oxSpecInput,
       oxConcModeInput,
       oxTargetConcInput,
       lvDoseInput,
       lvHoursInput,
+      lvSpecInput,
       lvRouteInput,
       lvTargetConcInput,
       fuBolusModeInput,
       fuBolusMinutesInput,
       fuInfusionHoursInput,
+      fuSpecInput,
       fuTargetConcInput,
       adjustLiverBInput,
       adjustTaceInput,
