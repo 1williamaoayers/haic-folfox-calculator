@@ -41,11 +41,6 @@ jobs:
           mkdir -p dist
           cp android/app/build/outputs/apk/debug/app-debug.apk dist/HAIC-FOLFOX.apk
 
-      - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: HAIC-FOLFOX-apk
-          path: dist/HAIC-FOLFOX.apk
 
       - name: Publish GitHub Release
         env:
